@@ -1,0 +1,28 @@
+import { setup, assign } from "xstate";
+import { {{AgentName}}Context, {{AgentName}}Event } from "./{{AgentName}}.schema";
+
+export const {{agentName}}Machine = setup({
+  types: {
+    context: {} as {{AgentName}}Context,
+    events: {} as {{AgentName}}Event,
+  },
+  actions: {
+    // Actions will be implemented in {{AgentName}}.service.ts
+  },
+  guards: {
+    // Guards will be implemented in {{AgentName}}.service.ts
+  },
+}).createMachine({
+  id: "{{agentName}}",
+  initial: "idle",
+  context: {
+    // Initial context
+  },
+  states: {
+    idle: {
+      on: {
+        // Events
+      },
+    },
+  },
+});

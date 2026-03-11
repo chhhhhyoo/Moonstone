@@ -1,0 +1,42 @@
+{
+  "branch_regex": "^codex\\/pf-(boot|runtime|gov|docs|infra|test)-([0-9]{3})-([a-z0-9][a-z0-9-]*)$",
+  "pr_title_regex": "^\\[PF-(BOOT|RUNTIME|GOV|DOCS|INFRA|TEST)-([0-9]{3})\\]\\s+(.+)$",
+  "commit_regex": "^PF-(BOOT|RUNTIME|GOV|DOCS|INFRA|TEST)-([0-9]{3}):\\s+(.+)$",
+  "allow_branches": [
+    "main"
+  ],
+  "streams": {
+    "boot": "BOOT",
+    "runtime": "RUNTIME",
+    "gov": "GOV",
+    "docs": "DOCS",
+    "infra": "INFRA",
+    "test": "TEST"
+  },
+  "max_pr_title_length": 120,
+  "required_pr_template_sections": [
+    "## Problem Framing",
+    "## Solution Shape",
+    "## Reviewer Focus",
+    "## Risk Surface",
+    "## Validation And Evidence",
+    "## Milestone And Follow-ups"
+  ],
+  "required_pr_body_sections": [
+    "## Problem Framing",
+    "## Solution Shape",
+    "## Reviewer Focus",
+    "## Risk Surface",
+    "## Validation And Evidence",
+    "## Milestone And Follow-ups"
+  ],
+  "forbidden_pr_body_phrases": [
+    "<paste commands and outcomes>",
+    "same as title",
+    "as shown in diff",
+    "misc updates",
+    "minor changes",
+    "tbd",
+    "todo"
+  ]
+}

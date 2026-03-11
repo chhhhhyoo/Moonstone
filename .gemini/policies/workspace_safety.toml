@@ -1,0 +1,34 @@
+# Safety Policy (Gemini CLI)
+# IMPORTANT: For enforcement, install globally:
+#   mkdir -p ~/.gemini/policies
+#   cp .gemini/policies/workspace_safety.toml ~/.gemini/policies/workspace_safety.toml
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "rm "
+decision = "deny"
+priority = 1000
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "sudo "
+decision = "deny"
+priority = 1000
+
+[[rule]]
+toolName = "run_shell_command"
+commandRegex = "(rm\\s+-rf\\b|dd\\s+if=\\b|mkfs\\b|:\\(\\)\\{:\\||/dev/sd[a-z])"
+decision = "deny"
+priority = 999
+
+[[rule]]
+toolName = "run_shell_command"
+commandRegex = "(git\\s+push\\b|npm\\s+publish\\b|docker\\s+push\\b|kubectl\\s+apply\\b)"
+decision = "ask_user"
+priority = 500
+
+[[rule]]
+toolName = "run_shell_command"
+commandRegex = "(npm\\s+install\\b|pip\\s+install\\b|cargo\\s+add\\b)"
+decision = "ask_user"
+priority = 400

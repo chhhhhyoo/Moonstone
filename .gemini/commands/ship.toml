@@ -1,0 +1,19 @@
+description = "Verify, summarize vs SPEC, update Transparency Log, and propose ship."
+prompt = '''
+You are running /ship.
+
+1) Check git status:
+!{git status --porcelain}
+
+2) Run Verification:
+!{npm run verify}
+
+3) Update Transparency Log:
+Finalize the active 'notes/FACTORY_RUN_XXX.md' with verification results.
+
+4) Summarize vs SPEC:
+Compare changes against master 'SPEC.md' and relevant 'specs/*.md'.
+
+5) Propose Ship:
+State exactly which branch to push to. Do not execute without confirmation.
+'''

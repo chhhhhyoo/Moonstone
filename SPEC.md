@@ -1,0 +1,70 @@
+# SPEC
+
+## Purpose
+
+Define the executable contract for Moonstone v0.1 bootstrap.
+
+## Source of Truth
+
+Priority order:
+
+1. Runtime code in `src/`
+2. This file and `specs/*.md`
+3. Historical docs
+
+## Architecture Baseline
+
+1. Core orchestration is transport-agnostic and relies on a **Durable Actor Runtime**.
+2. Adapters normalize ingress into `ConversationContext`.
+3. Agents are Moonstone-driven; state transitions are **pure functions** evaluating instantly with zero async side-effects.
+4. Provider interfaces are defined in core; side effects are strictly externalized.
+5. Side-effectful steps operate on an **Outbox/Inbox pattern**: Agents yield `OperationCommand`s, Orchestrator executes them via Provider Proxies, and resumes the Agent with an `OperationReceipt` using Correlation IDs.
+
+## Required Contracts
+
+Defined in [src/core/contracts.mjs](src/core/contracts.mjs):
+
+- `ConversationContext`
+- `AgentIntent`
+- `AgentDefinition`
+- `AgentRunResult`
+- `AgentFsmContract`
+- `ActorAddress`
+- `RunContext`
+- `CommandEnvelope`
+- `ReceiptEnvelope`
+- `ArtifactVersion`
+- `MessagingProvider`
+- `DomainProvider`
+- `ProviderProxy`
+- `SessionKey`
+- `OperationReceipt`
+- `SpecImpactRecord` (doc contract under `notes/spec-impact`)
+
+## Verification Tiers
+
+See [docs/governance/verification-tier-policy.md](docs/governance/verification-tier-policy.md).
+
+### Immediate commands
+
+- `npm run verify`
+- `npm run verify:strict`
+- `npm run check:type`
+- `npm run check:lint`
+- `npm run check:contracts`
+- `npm run check:pr-governance`
+- `npm run check:prepush-fast`
+
+## PR Governance Contract
+
+1. Branch and PR naming are canonicalized in [docs/governance/pr-branch-policy.md](docs/governance/pr-branch-policy.md).
+2. Machine-readable policy lives in `config/governance/pr-policy.json`.
+3. Scope routing contract lives in `config/governance/verification-scope-map.json`.
+
+## Change Control
+
+Public contract changes require, in the same change set:
+
+1. spec updates,
+2. tests,
+3. `notes/spec-impact/*.md` entry.

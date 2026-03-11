@@ -1,0 +1,106 @@
+{
+  "experimental": {
+    "skills": true,
+    "hooks": true
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "name": "state-recall",
+            "type": "command",
+            "command": "$GEMINI_PROJECT_DIR/.gemini/hooks/session-state-manager.sh",
+            "description": "Recalls active skill state on startup"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "name": "post-session-lint",
+            "type": "command",
+            "command": "$GEMINI_PROJECT_DIR/.gemini/hooks/post-task-lint.sh",
+            "description": "Runs npm run lint:fix after session ends"
+          }
+        ]
+      }
+    ],
+    "BeforeTool": [
+      {
+        "matcher": "activate_skill",
+        "hooks": [
+          {
+            "name": "skill-sequencer",
+            "type": "command",
+            "command": "$GEMINI_PROJECT_DIR/.gemini/hooks/skill-linker.sh",
+            "description": "Enforces logical order between dependent skills"
+          }
+        ]
+      }
+    ],
+    "AfterAgent": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "name": "post-task-lint",
+            "type": "command",
+            "command": "$GEMINI_PROJECT_DIR/.gemini/hooks/post-task-lint.sh",
+            "description": "Runs npm run lint:fix after every agent turn"
+          }
+        ]
+      }
+    ],
+    "AfterTool": [
+      {
+        "matcher": "exec",
+        "hooks": [
+          {
+            "name": "track-verification",
+            "type": "command",
+            "command": "$GEMINI_PROJECT_DIR/.gemini/hooks/verify-evidence.sh",
+            "description": "Tracks test/lint execution for quality gates"
+          }
+        ]
+      },
+      {
+        "matcher": "activate_skill",
+        "hooks": [
+          {
+            "name": "track-skill-activation",
+            "type": "command",
+            "command": "$GEMINI_PROJECT_DIR/.gemini/hooks/session-state-manager.sh",
+            "description": "Persists active skill state when tool is used"
+          },
+          {
+            "name": "refresh-cognitive-map",
+            "type": "command",
+            "command": "$GEMINI_PROJECT_DIR/.gemini/hooks/refresh-cognitive-map.sh",
+            "description": "Regenerates the Passive Context Index"
+          }
+        ]
+      }
+    ],
+    "AfterModel": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "name": "enforce-honesty",
+            "type": "command",
+            "command": "$GEMINI_PROJECT_DIR/.gemini/hooks/verify-evidence.sh",
+            "description": "Blocks claims of success without evidence"
+          }
+        ]
+      }
+    ]
+  },
+  "hooksConfig": {
+    "disabled": []
+  }
+}

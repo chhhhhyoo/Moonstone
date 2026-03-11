@@ -1,0 +1,139 @@
+name: Verify Moonstone
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "0 2 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-moonstone-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  detect-scope:
+    runs-on: ubuntu-latest
+    outputs:
+      verification_scope: ${{ steps.classify.outputs.verification_scope }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Classify verification scope
+        id: classify
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            scope="$(node scripts/classify-verification-scope.mjs --base "${{ github.event.pull_request.base.sha }}" --head "${{ github.event.pull_request.head.sha }}")"
+          else
+            scope="runtime"
+          fi
+          echo "verification_scope=${scope}" >> "$GITHUB_OUTPUT"
+          echo "scope=${scope}"
+
+  pr-governance:
+    needs:
+      - detect-scope
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate PR governance contract
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/check-pr-governance.mjs \
+            --branch "${{ github.head_ref }}" \
+            --title "$PR_TITLE" \
+            --base "${{ github.event.pull_request.base.sha }}" \
+            --head "${{ github.event.pull_request.head.sha }}"
+
+  precheck-fast:
+    needs:
+      - detect-scope
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+
+      - name: Run fast precheck
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ needs.detect-scope.outputs.verification_scope }}" == "docs_only" ]]; then
+            node scripts/check-prepush-fast.mjs --docs-only
+          else
+            node scripts/check-prepush-fast.mjs --with-tests
+          fi
+
+  verify:
+    needs:
+      - detect-scope
+      - precheck-fast
+      - pr-governance
+    if: always() && (needs.precheck-fast.result == 'success') && (github.event_name != 'pull_request' || needs.pr-governance.result == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+
+      - name: Tier-routed verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          scope="${{ needs.detect-scope.outputs.verification_scope }}"
+          event="${{ github.event_name }}"
+
+          if [[ "$event" == "pull_request" && "$scope" != "runtime" ]]; then
+            echo "Tiered route for scope=${scope}"
+            npm run docs:index
+            npm run check:spec
+            npm run check:strategy
+            npm run check:links
+            npm run check:symlinks
+            npm run check:memory
+            npm run check:text-hygiene
+            npm run check:scope-classifier
+          else
+            echo "Full strict route for scope=${scope}, event=${event}"
+            npm run verify:strict
+          fi

@@ -1,0 +1,14 @@
+import { z } from "zod";
+
+export const {{AgentName}}ContextSchema = z.object({
+  // Define context fields
+});
+
+export type {{AgentName}}Context = z.infer<typeof {{AgentName}}ContextSchema>;
+
+export const {{AgentName}}EventSchema = z.union([
+  // Define events
+  z.object({ type: z.literal("EXAMPLE_EVENT") }),
+]);
+
+export type {{AgentName}}Event = z.infer<typeof {{AgentName}}EventSchema>;

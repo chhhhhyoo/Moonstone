@@ -1,0 +1,8 @@
+node_modules/
+.DS_Store
+
+# Ephemeral planning memory
+task_plan.md
+findings.md
+progress.md
+notes/.session-state.json

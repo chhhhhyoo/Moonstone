@@ -1,0 +1,23 @@
+import { BaseAgent } from "@factory/BaseAgent";
+import { LLMClient } from "@factory/interface/LLMClient";
+import { {{agentName}}Machine } from "./{{AgentName}}.machine";
+
+export class {{AgentName}}Service extends BaseAgent {
+  constructor(llm: LLMClient) {
+    super(llm);
+    this.initMachine({{agentName}}Machine, {
+      implementations: {
+        actions: {
+          // Implement machine actions
+        },
+        guards: {
+          // Implement machine guards
+        },
+      },
+    });
+  }
+
+  getSystemPrompt(): string {
+    return "You are a specialized agent...";
+  }
+}

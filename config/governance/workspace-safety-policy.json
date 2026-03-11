@@ -1,0 +1,13 @@
+{
+  "deny_prefixes": [
+    "rm ",
+    "sudo "
+  ],
+  "deny_regexes": [
+    "(rm\\s+-rf\\b|dd\\s+if=\\b|mkfs\\b|:\\(\\)\\{:\\||/dev/sd[a-z])"
+  ],
+  "ask_user_regexes": [
+    "(git\\s+push\\b|npm\\s+publish\\b|docker\\s+push\\b|kubectl\\s+apply\\b)",
+    "(npm\\s+install\\b|pip\\s+install\\b|cargo\\s+add\\b)"
+  ]
+}

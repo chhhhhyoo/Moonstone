@@ -1,0 +1,10 @@
+description = "Initialize Manus-style planning files for a new complex task."
+prompt = '''
+You are running /factory_init.
+
+1) Create 'task_plan.md' using the factory template.
+2) Create 'findings.md' using the factory template.
+3) Create 'progress.md' using the factory template.
+4) **CRITICAL:** Remind the user to review `docs/learnings.md` and `docs/decisions/` for relevant context before starting work.
+5) Announce: 'Factory initialized. External memory is active.'
+'''

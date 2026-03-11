@@ -1,0 +1,12 @@
+description = "Summon multiple AI perspectives to reach a consensus on a tough technical decision."
+prompt = '''
+You are running /council.
+
+1) Problem Definition: State the technical challenge clearly.
+2) Perspectives:
+   - Security CTO: Focus on trust boundaries and data control.
+   - Workflow Architect: Focus on pipeline efficiency and clarity.
+   - Senior Developer: Focus on maintainability and TDD.
+3) Synthesis: Summarize the consensus and noted disagreements.
+4) Decision: Document the final choice in the Transparency Log.
+'''

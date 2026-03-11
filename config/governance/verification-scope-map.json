@@ -1,0 +1,18 @@
+{
+  "docs_only": [
+    "^docs/(?!governance/).+",
+    "^notes/.+",
+    "^README\\.md$",
+    "^SPEC\\.md$",
+    "^VISION\\.md$",
+    "^specs/.+\\.md$"
+  ],
+  "governance": [
+    "^AGENTS\\.md$",
+    "^docs/governance/.+",
+    "^config/governance/.+",
+    "^scripts/(check-branch-name|check-pr-title|check-pr-governance|classify-verification-scope|test-verification-scope-classifier|check-prepush-fast|check-strategy-trackers|strategy-tracker-lib)\\.mjs$",
+    "^\\.github/pull_request_template\\.md$",
+    "^\\.github/workflows/verify-moonstone\\.yml$"
+  ]
+}

@@ -1,0 +1,21 @@
+description = "Run spec lint/validate + conformance lint/run + Moonstone SSOT check. Stop on red."
+prompt = '''
+Run verification:
+
+1) Spec lint:
+!{npm run spec:lint}
+
+2) Spec validate:
+!{npm run spec:validate}
+
+3) Conformance lint:
+!{npm run conformance:lint}
+
+4) Conformance run:
+!{npm run conformance}
+
+5) Moonstone SSOT check:
+!{npm run moonstone:ssot:check}
+
+If anything fails, STOP and propose the minimal fix mapped to SPEC sections.
+'''

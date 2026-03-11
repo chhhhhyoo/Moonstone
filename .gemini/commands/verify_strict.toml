@@ -1,0 +1,21 @@
+description = "Run full strict verification gate (verify + guard + parity + ssot + model). Stop on red."
+prompt = '''
+Run strict verification:
+
+1) Basic verify:
+!{npm run verify}
+
+2) Spec guard:
+!{npm run spec:guard}
+
+3) Module parity:
+!{npm run module:parity}
+
+4) Moonstone SSOT check:
+!{npm run moonstone:ssot:check}
+
+5) Model tests:
+!{npm run test:model}
+
+If anything fails, STOP and perform root cause analysis before proposing fixes.
+'''

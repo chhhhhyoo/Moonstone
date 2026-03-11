@@ -1,0 +1,8 @@
+description = "Run boilerplate server locally (instance mode). Requires MODE=instance and STAGE=local; no USE_Moonstone (Moonstone-only)."
+prompt = '''
+Run the server locally for [YOUR TASK] agent development:
+
+!{STAGE=local MODE=instance npm run ts-node src/main.ts}
+
+Ensure you are in the boilerplate-be directory. MODE=instance is required or the app configures for Lambda and exits.
+'''

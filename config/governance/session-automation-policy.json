@@ -1,0 +1,91 @@
+{
+  "source": ".gemini/settings.json",
+  "mode": "protocol-driven",
+  "disabled": [],
+  "event_mappings": [
+    {
+      "event": "SessionStart",
+      "matcher": "*",
+      "hook": "state-recall",
+      "codex": {
+        "commands": ["npm run state:recall"],
+        "docs": ["docs/governance/local-skill-routing.md"],
+        "skills": [".codex/skills/wrap/SKILL.md"]
+      }
+    },
+    {
+      "event": "SessionEnd",
+      "matcher": "*",
+      "hook": "post-session-lint",
+      "codex": {
+        "commands": ["npm run lint:fix"],
+        "docs": ["docs/governance/local-skill-routing.md"],
+        "skills": [".codex/skills/wrap/SKILL.md"]
+      }
+    },
+    {
+      "event": "BeforeTool",
+      "matcher": "activate_skill",
+      "hook": "skill-sequencer",
+      "codex": {
+        "commands": ["npm run check:skill-prereqs"],
+        "docs": ["docs/governance/local-skill-routing.md"],
+        "skills": [".codex/skills/executing-plans/SKILL.md"]
+      }
+    },
+    {
+      "event": "AfterAgent",
+      "matcher": "*",
+      "hook": "post-task-lint",
+      "codex": {
+        "commands": ["npm run lint:fix"],
+        "docs": ["docs/governance/local-skill-routing.md"],
+        "skills": [".codex/skills/wrap/SKILL.md"]
+      }
+    },
+    {
+      "event": "AfterTool",
+      "matcher": "exec",
+      "hook": "track-verification",
+      "codex": {
+        "commands": ["npm run verify", "npm run verify:strict", "npm run state:verification"],
+        "docs": ["docs/governance/verification-tier-policy.md"],
+        "skills": [".codex/skills/verify/SKILL.md", ".codex/skills/verify-strict/SKILL.md"]
+      }
+    },
+    {
+      "event": "AfterTool",
+      "matcher": "activate_skill",
+      "hook": "track-skill-activation",
+      "codex": {
+        "commands": ["npm run state:set"],
+        "docs": ["docs/governance/local-skill-routing.md"],
+        "skills": [".codex/skills/wrap/SKILL.md"]
+      }
+    },
+    {
+      "event": "AfterTool",
+      "matcher": "activate_skill",
+      "hook": "refresh-cognitive-map",
+      "codex": {
+        "commands": ["npm run refresh:cognitive-map"],
+        "docs": ["docs/governance/local-skill-routing.md"],
+        "skills": [".codex/skills/wrap/SKILL.md"]
+      }
+    },
+    {
+      "event": "AfterModel",
+      "matcher": "*",
+      "hook": "enforce-honesty",
+      "codex": {
+        "commands": ["npm run check:verification-fresh"],
+        "docs": ["docs/governance/verification-tier-policy.md"],
+        "skills": [
+          ".codex/skills/verification-before-completion/SKILL.md",
+          ".codex/skills/ship/SKILL.md",
+          ".codex/skills/wrap/SKILL.md"
+        ]
+      }
+    }
+  ]
+}

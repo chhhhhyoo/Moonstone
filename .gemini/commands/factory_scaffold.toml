@@ -1,0 +1,16 @@
+description = "Scaffold a new Factory artifact (Tool/Skill/Agent) using Obsidian templates."
+prompt = '''
+I need to create a new artifact: {{artifact_name}}
+Type: {{type}} (tool|skill|agent)
+
+Step 1: Read 'notes/01-Workflow-Playbook.md' for the creation loop.
+Step 2: Read 'notes/02-Spec-Writing-Guide.md' for spec requirements.
+Step 3: Create 'specs/{{artifact_name}}.md' with concrete success criteria.
+Step 4: Initialize the Transparency Log 'notes/FACTORY_RUN_{{next_id}}.md'.
+
+Current standards check:
+- Is it bounded? (03-Context-Engineering.md)
+- Does it have failure modes? (05-Evals-and-Conformance.md)
+
+Propose the blueprint before writing code.
+'''

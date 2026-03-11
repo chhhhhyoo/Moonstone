@@ -1,0 +1,5 @@
+{
+  "query": "lookup oncology biomarker",
+  "expectedSource": "mock-research-provider",
+  "requiredItemFields": ["id", "title", "score"]
+}

@@ -1,0 +1,7 @@
+[
+  {
+    "id": "intake",
+    "directory": "src/agent/intake",
+    "module": "IntakeAgent"
+  }
+]

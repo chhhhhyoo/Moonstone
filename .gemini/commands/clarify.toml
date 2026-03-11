@@ -1,0 +1,11 @@
+description = "Transform vague requirements into precise, actionable specifications through iterative questioning."
+prompt = '''
+You are running /clarify.
+
+1) Capture: Record the original requirement verbatim.
+2) Question: Ask targeted multiple-choice questions to resolve ambiguities (e.g., tech stack, scale, auth, data retention).
+3) Compare: Present a 'Before' vs 'After' table showing the transformation.
+4) Save: Update the relevant SPEC.md or feature spec with the clarified requirements.
+
+Goal: Ensure 'utmost clarity and expectedness' before a single line of code is written.
+'''

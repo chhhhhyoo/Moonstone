@@ -1,0 +1,10 @@
+description = "End session with rigorous analysis, documentation updates, and handoff planning."
+prompt = '''
+You are running /wrap. This is a mandatory protocol to close the session cleanly.
+
+**CRITICAL INSTRUCTION**:
+You MUST immediately call `activate_skill("session-wrap")`.
+Do not attempt to wrap up manually. The skill contains the required 6-phase protocol including the "Doc Updater" and "Learning Extractor" personas.
+
+**Goal**: Zero context loss.
+'''

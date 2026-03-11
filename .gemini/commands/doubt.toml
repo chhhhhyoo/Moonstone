@@ -1,0 +1,12 @@
+description = "Force re-validation of a response to prevent hallucinations or errors."
+prompt = '''
+You are running /doubt (!rv).
+
+Re-evaluate your last response or the current proposal:
+1) Search for potential errors or outdated patterns.
+2) Check against Obsidian standards (vault-reader).
+3) Verify against 'The Iron Law' (TDD).
+4) Confirm if the logic is 'bounded' and 'failure-aware'.
+
+Deliver the corrected or confirmed final answer.
+'''
