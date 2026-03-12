@@ -85,6 +85,40 @@ export const ReceiptEnvelopeFields = [
   "evidenceRefs"
 ];
 
+export const WorkflowArtifactFields = [
+  "artifactId",
+  "artifactVersion",
+  "trigger",
+  "nodes",
+  "edges",
+  "defaults",
+  "metadata"
+];
+
+export const PocOperationCommandFields = [
+  "commandId",
+  "runId",
+  "nodeId",
+  "connectorType",
+  "payload",
+  "attempt",
+  "idempotencyKey",
+  "deadlineAt"
+];
+
+export const PocOperationReceiptFields = [
+  "receiptId",
+  "commandId",
+  "runId",
+  "nodeId",
+  "outcome",
+  "result",
+  "error",
+  "attempt",
+  "durationMs",
+  "recordedAt"
+];
+
 export const MessagingProviderMethods = ["postMessage", "addReaction", "removeReaction"];
 
 export const DomainProviderMethods = ["query"];

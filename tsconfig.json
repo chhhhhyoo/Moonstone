@@ -20,7 +20,10 @@
     "src/core/KernelEnvelope.mjs",
     "src/core/OperationReceipt.mjs",
     "src/core/SessionKey.mjs",
-    "src/core/contracts.mjs"
+    "src/core/contracts.mjs",
+    "src/core/poc/**/*.mjs",
+    "src/service/poc/**/*.mjs",
+    "src/provider/poc/**/*.mjs"
   ],
   "exclude": [
     "node_modules"

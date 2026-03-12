@@ -19,6 +19,9 @@ Priority order:
 3. Agents are Moonstone-driven; state transitions are **pure functions** evaluating instantly with zero async side-effects.
 4. Provider interfaces are defined in core; side effects are strictly externalized.
 5. Side-effectful steps operate on an **Outbox/Inbox pattern**: Agents yield `OperationCommand`s, Orchestrator executes them via Provider Proxies, and resumes the Agent with an `OperationReceipt` using Correlation IDs.
+6. POC workflow execution is artifact-driven (`WorkflowArtifact`) with explicit node/edge routing semantics: sequential + branch + retry.
+7. POC connectors are scoped to `trigger.webhook`, `action.http`, and `action.openai`.
+8. POC runtime journaling is append-only and file-backed for replay and inspection.
 
 ## Required Contracts
 
@@ -33,6 +36,9 @@ Defined in [src/core/contracts.mjs](src/core/contracts.mjs):
 - `RunContext`
 - `CommandEnvelope`
 - `ReceiptEnvelope`
+- `WorkflowArtifact`
+- `PocOperationCommand`
+- `PocOperationReceipt`
 - `ArtifactVersion`
 - `MessagingProvider`
 - `DomainProvider`
@@ -49,6 +55,12 @@ See [docs/governance/verification-tier-policy.md](docs/governance/verification-t
 
 - `npm run verify`
 - `npm run verify:strict`
+- `npm run poc:compile -- --prompt "..."`
+- `npm run poc:validate -- --artifact <path>`
+- `npm run poc:run -- --artifact <path> --input <path|json>`
+- `npm run poc:serve -- --artifact <path>`
+- `npm run poc:replay -- --run-id <id>`
+- `npm run poc:inspect -- --run-id <id>`
 - `npm run check:type`
 - `npm run check:lint`
 - `npm run check:contracts`

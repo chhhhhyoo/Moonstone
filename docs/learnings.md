@@ -162,3 +162,14 @@
 
 - Post-delivery understanding checks should be explicit workflow stages, not ad hoc explanations.
 - Tracking comprehension tasks in the same planning surface improves closeout clarity and accountability.
+
+## 2026-03-12: Workflow POCs Need Contract-First Runtime Before UX Expansion
+
+- Fast POC delivery still benefits from strict `artifact -> command -> receipt -> journal` boundaries; skipping this just defers risk into opaque debugging later.
+- Replay safety improves drastically when command emission is persisted before side-effect execution, even in file-backed journals.
+- Limiting first POC semantics to sequential + branch + retry provides meaningful product signal without premature parallel/human-wait complexity.
+
+## 2026-03-12: Crash Injection Tests Expose Real Resume Risks Early
+
+- A deliberate crash window (`after command emission, before receipt`) is a high-value test seam for orchestration runtimes.
+- Resume correctness depends on treating emitted-without-receipt commands as first-class pending work, not as incidental log noise.

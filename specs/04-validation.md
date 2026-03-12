@@ -20,6 +20,7 @@ Detect drift early and fail closed on missing contracts.
 10. ESLint strict gate
 11. contract export integrity gate
 12. unit tests
+13. POC runtime unit tests (artifact contract, retry/idempotency, runtime transitions)
 
 `npm run verify:strict` adds:
 
@@ -29,6 +30,7 @@ Detect drift early and fail closed on missing contracts.
 4. branch naming policy check
 5. strategy tracker integrity re-check
 6. conformance tests
+7. POC connector + replay/webhook conformance suites
 
 ## Drift Policy
 

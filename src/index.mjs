@@ -4,3 +4,7 @@ export { ActorStore } from "./service/ActorStore.mjs";
 export { AgentFactory } from "./service/AgentFactory.mjs";
 export { InMemoryMessagingProvider } from "./service/MessagingProvider.mjs";
 export { ResearchProviderProxy } from "./provider/mock/ResearchProviderProxy.mjs";
+export { WorkflowRuntime } from "./core/poc/WorkflowRuntime.mjs";
+export { compilePromptToArtifact } from "./core/poc/PromptCompiler.mjs";
+export { FileRunJournalStore } from "./service/poc/FileRunJournalStore.mjs";
+export { createDefaultConnectorExecutors } from "./provider/poc/ConnectorRegistry.mjs";

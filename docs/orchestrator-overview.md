@@ -2,64 +2,51 @@
 
 ## Purpose And Boundaries
 
-Moonstone orchestrates routing, session continuity, agent execution, and outbound messaging using a **Durable Execution** paradigm.
+Moonstone now operates two runtime slices:
 
-It does not own transport payload parsing and does not own provider protocol logic. It serves as an event dispatcher and state journal for agents.
+1. Legacy intake orchestration (historical bootstrap slice).
+2. PF-POC-001 workflow runtime (`WorkflowRuntime`) for CLI/webhook graph execution.
 
-## Flow At A Glance (Durable Moonstone + Outbox Pattern)
+The canonical active direction is PF-POC-001. Runtime execution is command/receipt-driven and journal-first.
 
-1. Adapter normalizes request into `ConversationContext`.
-2. Orchestrator computes `SessionKey` and checks active session.
-3. Existing session wakes up agent; otherwise intent routing creates agent.
-4. Agent evaluates its state as a **pure function** and yields `OperationCommand`s.
-5. Orchestrator appends the state transition and commands to an event journal (`ActorStore`).
-6. Orchestrator delegates commands to the `ProviderProxy` for side-effect execution.
-7. Upon completion, `ProviderProxy` returns an `OperationReceipt` with a `CorrelationId`.
-8. Orchestrator routes the receipt back to the matching session to resume execution.
+## Flow At A Glance (PF-POC-001)
+
+1. Prompt or JSON artifact enters via `poc:compile` / `poc:validate`.
+2. Runtime starts a run journal (`run_started`).
+3. Graph routing enqueues node execution from `trigger.webhook` edges.
+4. Runtime emits `OperationCommand` envelopes per node execution.
+5. Connector executors (`action.http`, `action.openai`) perform side effects.
+6. Runtime records `OperationReceipt` envelopes.
+7. Edge routing chooses next nodes using `always|success|failed` + declarative conditions.
+8. `run_finished` closes the run.
+
+## Replay And Recovery
+
+1. `poc:replay` rebuilds run state from append-only journal events.
+2. Pending commands (emitted without receipt) are surfaced explicitly.
+3. Resume path re-dispatches pending commands with deterministic idempotency keys.
+4. `poc:inspect` shows timeline diagnostics for verification and debugging.
 
 ## Can / Cannot / Currently Does
 
 ### Can
 
-1. route and resume active agent slices
-2. persist waiting-state sessions by hierarchical key and event journaling
-3. emit structured operation commands and receipts
-4. enforce strict side-effect isolation (Outbox pattern)
+1. Execute sequential + branch + retry workflow graphs.
+2. Persist command/receipt timeline in file-backed append-only journals.
+3. Run through CLI (`poc:run`) and webhook ingress (`poc:serve`).
 
-### Cannot
+### Cannot (v0)
 
-1. parse Slack/REST details in core orchestrator
-2. call HTTP/protocol operations directly from agents (all async calls must be yielded as commands)
-3. rely on user-id-only session identity
+1. Provide visual drag/drop canvas authoring.
+2. Orchestrate multi-agent handoff workflows.
+3. Model human wait-state orchestration.
 
 ### Currently Does
 
-1. ships one vertical slice (`intake`) with one proxy boundary (migrating to pure Moonstone)
-2. includes strict verification and conformance harness
-
-## Session Lifecycle
-
-1. `set`: store actor/agent state and journaled events by key
-2. `get`: return if active and not expired
-3. `touch`: refresh waiting state
-4. `clear`: remove completed/failed sessions
-
-## Interface Snapshot
-
-Contracts are defined in [src/core/contracts.mjs](../src/core/contracts.mjs).
-
-## Failure Surface
-
-1. invalid context normalization -> reject at adapter
-2. unknown intent -> no-op or controlled error path
-3. proxy failure -> controlled `failed` receipt returned to orchestrator, Moonstone decides next step
-4. stale session -> treated as new request
-
-## Roadmap / Drift Isolation
-
-Future transport-heavy integrations move to `Mariner`.
-Future conformance/promotion-heavy workflows move to `Surveyor`.
+1. Supports `trigger.webhook`, `action.http`, and `action.openai`.
+2. Enforces declarative artifact validation before execution.
+3. Includes crash-injection replay/resume conformance tests.
 
 ## Verification Confidence
 
-Confidence comes from `npm run verify:strict`, not from doc claims.
+Confidence comes from fresh `verify` / `verify:strict` evidence, including POC runtime tests.
