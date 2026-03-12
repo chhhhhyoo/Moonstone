@@ -112,6 +112,7 @@
 - `notes/spec-impact/2026-03-12-pf-poc-004-compile-diagnostics.md`: 2026-03-12 PF-POC-004 Compile Diagnostics Impact
 - `notes/spec-impact/2026-03-12-pf-poc-005-compile-golden-fixtures.md`: 2026-03-12 PF-POC-005 Compile Golden Fixtures Impact
 - `notes/spec-impact/2026-03-12-pf-poc-006-compile-runtime-matrix.md`: 2026-03-12 PF-POC-006 Compile Runtime Matrix Impact
+- `notes/spec-impact/2026-03-12-pf-poc-007-fault-injection-runtime-matrix.md`: 2026-03-12 PF-POC-007 Fault Injection Runtime Matrix Impact
 
 ## Documentation Catalog
 
