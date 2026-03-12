@@ -228,3 +228,8 @@
 
 - Inspect/replay workflows are weaker if run IDs are random-only because evidence chains become manual and error-prone.
 - Optional explicit run IDs in CLI execution are a low-cost contract that materially improves debugging and qualification reproducibility.
+
+## 2026-03-13: Ingress Determinism Needs E2E Proof, Not Unit Confidence
+
+- A webhook route can be healthy while still violating correlation guarantees if run-id override semantics are not tested end-to-end.
+- Health + trigger + inspect + replay must be validated in one gate to prove operator-grade reproducibility.

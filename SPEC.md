@@ -22,6 +22,7 @@ Priority order:
 6. POC workflow execution is artifact-driven (`WorkflowArtifact`) with explicit node/edge routing semantics: sequential + branch + retry.
 7. POC connectors are scoped to `trigger.webhook`, `action.http`, and `action.openai`.
 8. POC runtime journaling is append-only and file-backed for replay and inspection.
+9. Webhook ingress supports optional deterministic run-id override via `x-moonstone-run-id`; when absent, runtime-generated run IDs are used.
 
 ## Required Contracts
 
@@ -59,6 +60,7 @@ See [docs/governance/verification-tier-policy.md](docs/governance/verification-t
 - `npm run poc:validate -- --artifact <path>`
 - `npm run poc:run -- --artifact <path> --input <path|json>`
 - `npm run poc:serve -- --artifact <path>`
+- `npm run poc:serve -- --artifact <path> [--run-id-header <name>]`
 - `npm run poc:replay -- --run-id <id>`
 - `npm run poc:inspect -- --run-id <id>`
 - `npm run check:type`

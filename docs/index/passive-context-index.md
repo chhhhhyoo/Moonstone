@@ -34,6 +34,7 @@
 - `npm run poc:compile`
 - `npm run poc:inspect`
 - `npm run poc:qualify:demo`
+- `npm run poc:qualify:webhook`
 - `npm run poc:replay`
 - `npm run poc:run`
 - `npm run poc:serve`
@@ -115,6 +116,7 @@
 - `notes/spec-impact/2026-03-12-pf-poc-006-compile-runtime-matrix.md`: 2026-03-12 PF-POC-006 Compile Runtime Matrix Impact
 - `notes/spec-impact/2026-03-12-pf-poc-007-fault-injection-runtime-matrix.md`: 2026-03-12 PF-POC-007 Fault Injection Runtime Matrix Impact
 - `notes/spec-impact/2026-03-13-pf-poc-008-demo-runbook-qualification.md`: 2026-03-13 PF-POC-008 Demo Runbook Qualification Impact
+- `notes/spec-impact/2026-03-13-pf-poc-009-webhook-e2e-runid.md`: 2026-03-13 PF-POC-009 Webhook E2E Run-ID Impact
 
 ## Documentation Catalog
 
