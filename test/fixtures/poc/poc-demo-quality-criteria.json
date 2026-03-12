@@ -1,0 +1,25 @@
+{
+  "version": "1.0.0",
+  "minimumScenarioCount": 4,
+  "requiredScenarioIds": [
+    "happy-sequential",
+    "branch-comparator-true",
+    "retry-recovery-success",
+    "failure-branch-fallback"
+  ],
+  "requiredCommandCoverage": [
+    "poc:compile",
+    "poc:validate",
+    "poc:run",
+    "poc:inspect",
+    "poc:replay"
+  ],
+  "requiredEventTypes": [
+    "run_started",
+    "command_emitted",
+    "receipt_recorded",
+    "run_finished"
+  ],
+  "requiredRetryScenarioCount": 2,
+  "requiredFailureBranchScenarioCount": 1
+}

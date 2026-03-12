@@ -9,6 +9,10 @@ async function main() {
   const artifactPath = path.resolve(process.cwd(), requireArg(args, "artifact"));
   const artifact = await loadArtifact(artifactPath);
   const input = await loadInput(args.input ? String(args.input) : "");
+  if (args["run-id"] === true) {
+    throw new Error("Optional --run-id requires a value.");
+  }
+  const runId = args["run-id"] ? String(args["run-id"]) : undefined;
 
   const journalStore = new FileRunJournalStore({
     rootDir: args["journal-dir"] ? String(args["journal-dir"]) : ".moonstone/poc-journal"
@@ -19,7 +23,7 @@ async function main() {
     connectorExecutors: createDefaultConnectorExecutors()
   });
 
-  const result = await runtime.run({ artifact, input });
+  const result = await runtime.run({ artifact, input, runId });
   console.log(JSON.stringify(result, null, 2));
 }
 

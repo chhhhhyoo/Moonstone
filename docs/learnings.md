@@ -218,3 +218,13 @@
 
 - Retry/failure logic that passes nominal tests can still break when crashes happen at persistence boundaries.
 - Include injected crash points in runtime matrix tests so `resume` determinism is proven under fault windows.
+
+## 2026-03-13: Operator Readiness Must Be Enforced By Tests, Not Runbook Prose
+
+- A runbook without an executable qualification matrix drifts quickly and becomes trust theater.
+- Encode operator expectations (scenario IDs, command coverage, event coverage) in data-driven criteria files so regressions fail closed.
+
+## 2026-03-13: Deterministic Run IDs Are Required For Repeatable Triage
+
+- Inspect/replay workflows are weaker if run IDs are random-only because evidence chains become manual and error-prone.
+- Optional explicit run IDs in CLI execution are a low-cost contract that materially improves debugging and qualification reproducibility.

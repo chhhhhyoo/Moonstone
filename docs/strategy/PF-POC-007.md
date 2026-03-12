@@ -3,7 +3,7 @@
 **Milestone**: `PF-POC-007`
 **Execution Branch**: `codex/pf-runtime-019-fault-injection-matrix`
 **Owner**: `core`
-**Status**: `in_progress`
+**Status**: `done`
 **Last Updated**: `2026-03-12`
 
 ## Objective
@@ -45,3 +45,4 @@ Validate deterministic retry, failure-edge routing, and recovery behavior under 
 | 2026-03-12 17:27 | Added fault-injection runtime fixture corpus for transient failure recovery, failure-edge routing, terminal failure, and retry-scheduled crash recovery. | `test/fixtures/poc/prompt-fault-fixtures.json` |
 | 2026-03-12 17:27 | Added fault-injection conformance matrix test validating deterministic retry/failure/recovery outcomes for compiled fixture artifacts. | `test/integration/conformance/poc-runtime-fault-matrix.conformance.test.mjs`, `node --test test/integration/conformance/poc-runtime-fault-matrix.conformance.test.mjs` |
 | 2026-03-12 17:29 | Completed strict regression + freshness verification with fault matrix and compile-runtime matrix active together. | `npm run verify:strict`, `npm run check:verification-fresh` |
+| 2026-03-12 17:30 | Merged PF-RUNTIME-019 PR and closed PF-POC-007 action/risk scope (`ACT-012`, `POC-011`) with exit criteria satisfied. | `https://github.com/chhhhhyoo/Moonstone/pull/10`, `docs/strategy/MILESTONES.md`, `docs/strategy/FUTURE-ACTIONS.md`, `docs/strategy/2026-03-12-pf-poc-001-risk-register.md` |
