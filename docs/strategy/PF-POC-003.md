@@ -1,7 +1,7 @@
 # PF-POC-003: Prompt Compiler Branching Quality Plan
 
 **Milestone**: `PF-POC-003`
-**Execution Branch**: `codex/pf-runtime-014-compiler-branching-quality`
+**Execution Branch**: `codex/pf-runtime-015-compiler-comparator-branches`
 **Owner**: `core`
 **Status**: `in_progress`
 **Last Updated**: `2026-03-12`
@@ -21,6 +21,9 @@ Increase prompt-to-artifact quality for non-trivial prompts by producing determi
 3. Governance evidence updates in same change set:
    - milestone/actions/risk tracker refresh
    - daily log and spec-impact record
+4. Comparator expansion focus for this continuation slice:
+   - infer comparator conditions from prompt patterns (`eq/ne/gt/gte/lt/lte`)
+   - generate deterministic mutually-exclusive true/false success branches
 
 ## Non-Goals (This Slice)
 
@@ -48,3 +51,7 @@ Increase prompt-to-artifact quality for non-trivial prompts by producing determi
 | 2026-03-12 16:46 | Resolved `check:type` inference drift by adding explicit JSDoc union typing for mixed node/edge arrays in JS strict mode. | `src/core/poc/PromptCompiler.mjs`, `npm run verify:strict` |
 | 2026-03-12 16:46 | Validated compile/validate smoke path using branching prompt fixture and confirmed strict full-gate regression pass. | `npm run poc:compile -- --prompt "when input.customerId exists post to webhook and on failure send fallback summary" --out .moonstone/artifacts/pf-poc-003-branching.json`, `npm run poc:validate -- --artifact .moonstone/artifacts/pf-poc-003-branching.json`, `npm run verify:strict` |
 | 2026-03-12 16:50 | Opened implementation PR with template-compliant body and policy title for milestone review. | `https://github.com/chhhhhyoo/Moonstone/pull/5` |
+| 2026-03-12 17:02 | Post-merge refresh completed for PR #5; continued PF-POC-003 on new branch for comparator-aware branching coverage closure. | `git checkout -b codex/pf-runtime-015-compiler-comparator-branches`, `docs/strategy/PF-POC-003.md` |
+| 2026-03-12 17:03 | Added RED-first comparator branch tests for numeric (`>`) and verbal equality (`equals`) prompt patterns. | `test/unit/poc/PromptCompiler.test.mjs`, `node --test test/unit/poc/PromptCompiler.test.mjs` |
+| 2026-03-12 17:04 | Implemented comparator inference + inverse comparator mapping to build deterministic true/false conditional success edges. | `src/core/poc/PromptCompiler.mjs` |
+| 2026-03-12 17:04 | Validated comparator compile/validate smoke and strict regression gates green. | `npm run poc:compile -- --prompt "When input.amount > 100 post order and summarize premium path" --out .moonstone/artifacts/pf-poc-003-comparator.json`, `npm run poc:validate -- --artifact .moonstone/artifacts/pf-poc-003-comparator.json`, `npm run verify:strict` |

@@ -188,3 +188,8 @@
 
 - With `checkJs` enabled, array literal inference can freeze to the first element shape and reject later union members (for example HTTP node config vs OpenAI node config).
 - For compiler-style builders that push heterogeneous node types, add explicit JSDoc union typing up front so strict type checks reflect intended schema breadth.
+
+## 2026-03-12: Conditional Branching In Fan-Out Runtimes Needs Explicit Inverse Conditions For If/Else Semantics
+
+- In a fan-out edge model, adding a conditional edge plus an unconditional fallback edge causes double execution when the condition is true.
+- For compiler-generated if/else behavior, emit two explicit complementary conditions (`op` and inverse `op`) so branch execution remains deterministic and mutually exclusive.
