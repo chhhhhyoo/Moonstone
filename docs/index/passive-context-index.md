@@ -111,6 +111,7 @@
 - `notes/spec-impact/2026-03-12-pf-poc-003-compiler-branching-quality.md`: 2026-03-12 PF-POC-003 Compiler Branching Quality Impact
 - `notes/spec-impact/2026-03-12-pf-poc-004-compile-diagnostics.md`: 2026-03-12 PF-POC-004 Compile Diagnostics Impact
 - `notes/spec-impact/2026-03-12-pf-poc-005-compile-golden-fixtures.md`: 2026-03-12 PF-POC-005 Compile Golden Fixtures Impact
+- `notes/spec-impact/2026-03-12-pf-poc-006-compile-runtime-matrix.md`: 2026-03-12 PF-POC-006 Compile Runtime Matrix Impact
 
 ## Documentation Catalog
 

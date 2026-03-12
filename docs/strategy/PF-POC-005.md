@@ -3,7 +3,7 @@
 **Milestone**: `PF-POC-005`
 **Execution Branch**: `codex/pf-runtime-017-compile-golden-fixtures`
 **Owner**: `core`
-**Status**: `in_progress`
+**Status**: `done`
 **Last Updated**: `2026-03-12`
 
 ## Objective
@@ -52,3 +52,4 @@ Raise regression confidence by adding a representative prompt/artifact fixture c
 | 2026-03-12 17:17 | Added machine-readable qualification criteria contract and qualification test enforcing coverage/determinism thresholds. | `test/fixtures/poc/prompt-compile-quality-criteria.json`, `test/unit/poc/PromptCompiler.qualification.test.mjs`, `node --test test/unit/poc/PromptCompiler.qualification.test.mjs` |
 | 2026-03-12 17:17 | Added explicit TDD entry/exit criteria and recursive delivery loop rules for PF-POC-005 continuation. | `docs/strategy/PF-POC-005-TDD-QUALIFICATION.md` |
 | 2026-03-12 17:18 | Re-ran strict regression and freshness gates after qualification contract integration; all gates remain green. | `npm run verify:strict`, `npm run check:verification-fresh` |
+| 2026-03-12 17:19 | Merged PF-RUNTIME-017 PR and closed PF-POC-005 action/risk scope (`ACT-010`, `POC-009`) with exit criteria satisfied. | `https://github.com/chhhhhyoo/Moonstone/pull/8`, `docs/strategy/MILESTONES.md`, `docs/strategy/FUTURE-ACTIONS.md`, `docs/strategy/2026-03-12-pf-poc-001-risk-register.md` |

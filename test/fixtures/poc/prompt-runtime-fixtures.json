@@ -1,0 +1,111 @@
+[
+  {
+    "id": "default-linear-run",
+    "prompt": "Get order status and summarize result",
+    "input": { "text": "hello" },
+    "httpBehavior": "success",
+    "expected": {
+      "branchMode": "default",
+      "status": "completed",
+      "attempts": { "http-1": 1, "openai-success-1": 1 },
+      "executedNodeIds": ["http-1", "openai-success-1"]
+    }
+  },
+  {
+    "id": "exists-present-run",
+    "prompt": "When input.priority exists summarize priority otherwise summarize default",
+    "input": { "priority": "high" },
+    "httpBehavior": "success",
+    "expected": {
+      "branchMode": "exists",
+      "status": "completed",
+      "attempts": { "http-1": 1, "openai-present-1": 1 },
+      "executedNodeIds": ["http-1", "openai-present-1"]
+    }
+  },
+  {
+    "id": "exists-missing-run",
+    "prompt": "When input.priority exists summarize priority otherwise summarize default",
+    "input": {},
+    "httpBehavior": "success",
+    "expected": {
+      "branchMode": "exists",
+      "status": "completed",
+      "attempts": { "http-1": 1, "openai-missing-1": 1 },
+      "executedNodeIds": ["http-1", "openai-missing-1"]
+    }
+  },
+  {
+    "id": "comparator-gt-true-run",
+    "prompt": "When input.amount > 100 summarize premium order otherwise summarize standard order",
+    "input": { "amount": 200 },
+    "httpBehavior": "success",
+    "expected": {
+      "branchMode": "comparator",
+      "status": "completed",
+      "attempts": { "http-1": 1, "openai-condition-true-1": 1 },
+      "executedNodeIds": ["http-1", "openai-condition-true-1"]
+    }
+  },
+  {
+    "id": "comparator-gt-false-run",
+    "prompt": "When input.amount > 100 summarize premium order otherwise summarize standard order",
+    "input": { "amount": 5 },
+    "httpBehavior": "success",
+    "expected": {
+      "branchMode": "comparator",
+      "status": "completed",
+      "attempts": { "http-1": 1, "openai-condition-false-1": 1 },
+      "executedNodeIds": ["http-1", "openai-condition-false-1"]
+    }
+  },
+  {
+    "id": "comparator-eq-true-run",
+    "prompt": "If input.tier equals gold summarize gold path otherwise summarize standard path",
+    "input": { "tier": "gold" },
+    "httpBehavior": "success",
+    "expected": {
+      "branchMode": "comparator",
+      "status": "completed",
+      "attempts": { "http-1": 1, "openai-condition-true-1": 1 },
+      "executedNodeIds": ["http-1", "openai-condition-true-1"]
+    }
+  },
+  {
+    "id": "comparator-eq-false-run",
+    "prompt": "If input.tier equals gold summarize gold path otherwise summarize standard path",
+    "input": { "tier": "silver" },
+    "httpBehavior": "success",
+    "expected": {
+      "branchMode": "comparator",
+      "status": "completed",
+      "attempts": { "http-1": 1, "openai-condition-false-1": 1 },
+      "executedNodeIds": ["http-1", "openai-condition-false-1"]
+    }
+  },
+  {
+    "id": "failure-branch-run",
+    "prompt": "Call vendor API and on failure summarize error for operator",
+    "input": {},
+    "httpBehavior": "fail",
+    "expected": {
+      "branchMode": "default",
+      "status": "completed",
+      "attempts": { "http-1": 2, "openai-failure-1": 1 },
+      "executedNodeIds": ["http-1", "openai-failure-1"]
+    }
+  },
+  {
+    "id": "warning-fallback-run",
+    "prompt": "If customer is vip route premium otherwise route standard",
+    "input": {},
+    "httpBehavior": "success",
+    "expected": {
+      "branchMode": "default",
+      "status": "completed",
+      "attempts": { "http-1": 1, "openai-success-1": 1 },
+      "executedNodeIds": ["http-1", "openai-success-1"],
+      "warningIncludes": "Conditional intent detected but no supported condition pattern matched"
+    }
+  }
+]
