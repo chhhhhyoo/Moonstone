@@ -208,3 +208,8 @@
 
 - A written quality checklist is insufficient unless thresholds are machine-enforced against fixture data.
 - Encoding qualification gates as a criteria JSON + gate test keeps recursive TDD loops honest and fail-closed.
+
+## 2026-03-12: Compile Correctness Is Not Runtime Correctness
+
+- A compiler can emit structurally valid artifacts while still routing to unexpected branches at execution time.
+- Add compile-to-runtime matrix tests with deterministic connector stubs to verify actual executed node paths and attempts.

@@ -16,6 +16,7 @@ This directory stores milestone-level planning, risk tracking, and future action
 5. [PF-POC-004.md](PF-POC-004.md)
 6. [PF-POC-005.md](PF-POC-005.md)
 7. [PF-POC-005-TDD-QUALIFICATION.md](PF-POC-005-TDD-QUALIFICATION.md)
+8. [PF-POC-006.md](PF-POC-006.md)
 
 ## Superseded Context Docs
 
