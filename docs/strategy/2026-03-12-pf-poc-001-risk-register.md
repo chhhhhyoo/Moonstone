@@ -9,7 +9,7 @@
 | POC-003 | Retry policy drifts across nodes due to inconsistent default/override precedence | low | medium | Single retry resolver with unit tests for cap/backoff behavior | core | done |
 | POC-004 | OpenAI/HTTP connector failures become opaque and block debugging | low | high | Structured receipt error payloads and inspect timeline command | core | done |
 | POC-005 | Governance drift reintroduces stale PF-RUNTIME assumptions in active planning artifacts | low | medium | Milestone/action hard reset and supersession markers in legacy docs | governance | done |
-| POC-006 | Crash during multi-edge continuation fan-out may enqueue only a subset of downstream nodes | medium | high | Persist continuation decision atomically and replay fan-out deterministically | core | planned |
+| POC-006 | Crash during multi-edge continuation fan-out may enqueue only a subset of downstream nodes | low | high | Persist continuation decision atomically and replay fan-out deterministically with crash-injected conformance tests | core | in_progress |
 
 ## Trigger Conditions
 
@@ -25,4 +25,4 @@
 3. POC-003: closed when retry/default precedence and backoff capping are unit-tested.
 4. POC-004: closed when `poc:inspect` exposes actionable timeline diagnostics.
 5. POC-005: closed when canonical strategy trackers remain POC-first for one full milestone.
-6. POC-006: closed when fan-out continuation decisions are persisted/replayed as one deterministic step.
+6. POC-006: closed when fan-out continuation decisions are persisted/replayed as one deterministic step and strict verification remains green.

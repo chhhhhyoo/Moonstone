@@ -99,7 +99,8 @@ export class WorkflowRuntime {
       nodeResults: /** @type {Record<string, any>} */ ({}),
       lastReceipt: null,
       pendingCommands: /** @type {Map<string, any>} */ (new Map()),
-      emittedCommands: 0
+      emittedCommands: 0,
+      continuations: /** @type {Map<string, any>} */ (new Map())
     };
 
     const runStarted = {
@@ -159,6 +160,7 @@ export class WorkflowRuntime {
     }
 
     const input = state.input ?? {};
+    await this.reconcileIncompleteContinuations(state);
     await this.reconcileContinuationGap(state, state.artifact, input);
 
     for (const command of [...state.pendingCommands.values()]) {
@@ -202,7 +204,8 @@ export class WorkflowRuntime {
       emittedCommands: 0,
       artifact: /** @type {any} */ (null),
       input: /** @type {Record<string, any>} */ ({}),
-      lastEvent: /** @type {any} */ (null)
+      lastEvent: /** @type {any} */ (null),
+      continuations: /** @type {Map<string, any>} */ (new Map())
     };
 
     for (const event of events) {
@@ -216,6 +219,9 @@ export class WorkflowRuntime {
           break;
         case "node_enqueued":
           state.queue.push(event.nodeId);
+          if (event.continuationId && state.continuations.has(event.continuationId)) {
+            state.continuations.get(event.continuationId).enqueuedNodeIds.add(event.nodeId);
+          }
           break;
         case "node_dequeued":
           removeQueuedNode(state.queue, event.nodeId);
@@ -239,12 +245,79 @@ export class WorkflowRuntime {
         case "node_terminal_failed":
           state.status = "failed";
           break;
+        case "continuation_planned":
+          state.continuations.set(event.continuationId, {
+            continuationId: event.continuationId,
+            fromNodeId: event.fromNodeId,
+            outcome: event.outcome,
+            reason: event.reason,
+            nodeIds: event.nodeIds ?? [],
+            enqueuedNodeIds: new Set(),
+            applied: false
+          });
+          break;
+        case "continuation_applied":
+          if (state.continuations.has(event.continuationId)) {
+            state.continuations.get(event.continuationId).applied = true;
+          }
+          break;
         default:
           break;
       }
     }
 
     return state;
+  }
+
+  async reconcileIncompleteContinuations(state) {
+    if (state.status !== "running") {
+      return;
+    }
+
+    for (const continuation of state.continuations.values()) {
+      const missingNodeIds = continuation.nodeIds.filter((nodeId) => !continuation.enqueuedNodeIds.has(nodeId));
+      if (missingNodeIds.length === 0) {
+        if (!continuation.applied) {
+          continuation.applied = true;
+          await this.journalStore.appendEvent(state.runId, {
+            eventType: "continuation_applied",
+            at: this.now().toISOString(),
+            runId: state.runId,
+            continuationId: continuation.continuationId,
+            nodeCount: continuation.nodeIds.length
+          });
+        }
+        continue;
+      }
+
+      await this.journalStore.appendEvent(state.runId, {
+        eventType: "continuation_recovered",
+        at: this.now().toISOString(),
+        runId: state.runId,
+        continuationId: continuation.continuationId,
+        missingNodeIds
+      });
+
+      for (const nodeId of missingNodeIds) {
+        await this.enqueueNode(
+          state,
+          state.runId,
+          nodeId,
+          `resume-continuation:${continuation.continuationId}`,
+          continuation.continuationId
+        );
+        continuation.enqueuedNodeIds.add(nodeId);
+      }
+
+      continuation.applied = true;
+      await this.journalStore.appendEvent(state.runId, {
+        eventType: "continuation_applied",
+        at: this.now().toISOString(),
+        runId: state.runId,
+        continuationId: continuation.continuationId,
+        nodeCount: continuation.nodeIds.length
+      });
+    }
   }
 
   async reconcileContinuationGap(state, artifact, input) {
@@ -330,7 +403,14 @@ export class WorkflowRuntime {
     }
   }
 
-  async enqueueNode(state, runId, nodeId, reason) {
+  /**
+   * @param {any} state
+   * @param {string} runId
+   * @param {string} nodeId
+   * @param {string} reason
+   * @param {string | null} [continuationId]
+   */
+  async enqueueNode(state, runId, nodeId, reason, continuationId = null) {
     state.queue.push(nodeId);
     await this.journalStore.appendEvent(runId, {
       eventType: "node_enqueued",
@@ -338,6 +418,7 @@ export class WorkflowRuntime {
       runId,
       nodeId,
       reason,
+      continuationId,
       queueSize: state.queue.length
     });
   }
@@ -345,9 +426,46 @@ export class WorkflowRuntime {
   async enqueueFrom(state, artifact, fromNodeId, outcome, input, reason) {
     const scope = buildScope(state, input);
     const nextEdges = getOutgoingEdges(artifact, fromNodeId, outcome, scope);
-    for (const edge of nextEdges) {
-      await this.enqueueNode(state, state.runId, edge.to, reason);
+    if (nextEdges.length === 0) {
+      return 0;
     }
+
+    const continuationId = this.uuid();
+    const nodeIds = nextEdges.map((edge) => edge.to);
+    const continuation = {
+      continuationId,
+      fromNodeId,
+      outcome,
+      reason,
+      nodeIds,
+      enqueuedNodeIds: new Set(),
+      applied: false
+    };
+    state.continuations.set(continuationId, continuation);
+    await this.journalStore.appendEvent(state.runId, {
+      eventType: "continuation_planned",
+      at: this.now().toISOString(),
+      runId: state.runId,
+      continuationId,
+      fromNodeId,
+      outcome,
+      reason,
+      nodeIds
+    });
+
+    for (const nodeId of nodeIds) {
+      await this.enqueueNode(state, state.runId, nodeId, reason, continuationId);
+      continuation.enqueuedNodeIds.add(nodeId);
+    }
+
+    continuation.applied = true;
+    await this.journalStore.appendEvent(state.runId, {
+      eventType: "continuation_applied",
+      at: this.now().toISOString(),
+      runId: state.runId,
+      continuationId,
+      nodeCount: nodeIds.length
+    });
     return nextEdges.length;
   }
 
