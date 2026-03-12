@@ -1,0 +1,83 @@
+[
+  {
+    "id": "happy-sequential",
+    "prompt": "Get order status and summarize result",
+    "input": {
+      "text": "demo-happy"
+    },
+    "httpRoute": "ok",
+    "expected": {
+      "branchMode": "default",
+      "status": "completed",
+      "attempts": {
+        "http-1": 1,
+        "openai-success-1": 1
+      },
+      "executedNodeIds": [
+        "http-1",
+        "openai-success-1"
+      ]
+    }
+  },
+  {
+    "id": "branch-comparator-true",
+    "prompt": "When input.amount > 100 summarize premium order otherwise summarize standard order",
+    "input": {
+      "text": "demo-branch-true",
+      "amount": 120
+    },
+    "httpRoute": "ok",
+    "expected": {
+      "branchMode": "comparator",
+      "status": "completed",
+      "attempts": {
+        "http-1": 1,
+        "openai-condition-true-1": 1
+      },
+      "executedNodeIds": [
+        "http-1",
+        "openai-condition-true-1"
+      ]
+    }
+  },
+  {
+    "id": "retry-recovery-success",
+    "prompt": "Get order status and summarize result",
+    "input": {
+      "text": "demo-retry"
+    },
+    "httpRoute": "fail-once",
+    "expected": {
+      "branchMode": "default",
+      "status": "completed",
+      "attempts": {
+        "http-1": 2,
+        "openai-success-1": 1
+      },
+      "executedNodeIds": [
+        "http-1",
+        "openai-success-1"
+      ]
+    }
+  },
+  {
+    "id": "failure-branch-fallback",
+    "prompt": "Call vendor API and on failure summarize error for operator",
+    "input": {
+      "text": "demo-failure"
+    },
+    "httpRoute": "always-fail",
+    "expected": {
+      "branchMode": "default",
+      "status": "completed",
+      "attempts": {
+        "http-1": 2,
+        "openai-failure-1": 1
+      },
+      "executedNodeIds": [
+        "http-1",
+        "openai-failure-1"
+      ]
+    }
+  }
+]
