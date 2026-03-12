@@ -110,6 +110,7 @@
 - `notes/spec-impact/2026-03-12-pf-poc-003-comparator-branching-extension.md`: 2026-03-12 PF-POC-003 Comparator Branching Extension Impact
 - `notes/spec-impact/2026-03-12-pf-poc-003-compiler-branching-quality.md`: 2026-03-12 PF-POC-003 Compiler Branching Quality Impact
 - `notes/spec-impact/2026-03-12-pf-poc-004-compile-diagnostics.md`: 2026-03-12 PF-POC-004 Compile Diagnostics Impact
+- `notes/spec-impact/2026-03-12-pf-poc-005-compile-golden-fixtures.md`: 2026-03-12 PF-POC-005 Compile Golden Fixtures Impact
 
 ## Documentation Catalog
 

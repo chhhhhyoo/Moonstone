@@ -1,0 +1,22 @@
+{
+  "version": "1.0.0",
+  "minimumFixtureCount": 6,
+  "determinism": {
+    "runsPerFixture": 2
+  },
+  "requiredBranchModes": ["default", "exists", "comparator"],
+  "requiredScenarioIds": [
+    "default-linear",
+    "exists-branch",
+    "comparator-branch",
+    "comparator-equals-branch",
+    "failure-branch",
+    "unsupported-conditional-warning"
+  ],
+  "requiredWarningScenarioCount": 1,
+  "requiredFailureBranchScenarioCount": 1,
+  "requiredComparatorPairs": [
+    { "trueOp": "gt", "falseOp": "lte" },
+    { "trueOp": "eq", "falseOp": "ne" }
+  ]
+}

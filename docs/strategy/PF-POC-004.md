@@ -3,7 +3,7 @@
 **Milestone**: `PF-POC-004`
 **Execution Branch**: `codex/pf-runtime-016-compile-diagnostics`
 **Owner**: `core`
-**Status**: `in_progress`
+**Status**: `done`
 **Last Updated**: `2026-03-12`
 
 ## Objective
@@ -46,3 +46,4 @@ Expose deterministic compiler inference and fallback decisions so prompt/graph m
 | 2026-03-12 17:03 | Added `compilePrompt` diagnostics payload (branch mode, inferences, warnings) while preserving `compilePromptToArtifact` compatibility. | `src/core/poc/PromptCompiler.mjs` |
 | 2026-03-12 17:03 | Extended `poc:compile` with optional `--diagnostics-out` report emission and diagnostics summary output. | `scripts/poc-compile.mjs`, `npm run poc:compile -- --prompt "If customer is vip route premium otherwise route standard" --out .moonstone/artifacts/pf-poc-004-diagnostics.json --diagnostics-out .moonstone/artifacts/pf-poc-004-diagnostics-report.json` |
 | 2026-03-12 17:05 | Completed strict regression + freshness verification after diagnostics and tracker updates. | `npm run verify:strict`, `npm run check:verification-fresh` |
+| 2026-03-12 17:07 | Merged diagnostics PR and closed PF-POC-004 action scope (`ACT-009`) with milestone exit criteria satisfied. | `https://github.com/chhhhhyoo/Moonstone/pull/7`, `docs/strategy/MILESTONES.md`, `docs/strategy/FUTURE-ACTIONS.md` |
