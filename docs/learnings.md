@@ -213,3 +213,8 @@
 
 - A compiler can emit structurally valid artifacts while still routing to unexpected branches at execution time.
 - Add compile-to-runtime matrix tests with deterministic connector stubs to verify actual executed node paths and attempts.
+
+## 2026-03-12: Recovery Guarantees Need Fault-Window Tests, Not Just Happy/Fail Paths
+
+- Retry/failure logic that passes nominal tests can still break when crashes happen at persistence boundaries.
+- Include injected crash points in runtime matrix tests so `resume` determinism is proven under fault windows.

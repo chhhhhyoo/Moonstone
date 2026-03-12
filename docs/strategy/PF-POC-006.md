@@ -3,7 +3,7 @@
 **Milestone**: `PF-POC-006`
 **Execution Branch**: `codex/pf-runtime-018-compile-runtime-matrix`
 **Owner**: `core`
-**Status**: `in_progress`
+**Status**: `done`
 **Last Updated**: `2026-03-12`
 
 ## Objective
@@ -46,3 +46,4 @@ Prove compiled fixtures are not just schema-valid but runtime-valid by executing
 | 2026-03-12 17:20 | Added runtime fixture corpus encoding compile prompt, runtime input, HTTP behavior, and expected branch execution outcomes. | `test/fixtures/poc/prompt-runtime-fixtures.json` |
 | 2026-03-12 17:20 | Added compile-to-runtime conformance matrix test validating executed node set, attempts, status, and warning/branch mode expectations per fixture. | `test/integration/conformance/poc-compile-runtime-matrix.conformance.test.mjs`, `node --test test/integration/conformance/poc-compile-runtime-matrix.conformance.test.mjs` |
 | 2026-03-12 17:25 | Completed strict regression + freshness verification with compile-to-runtime conformance matrix active. | `npm run verify:strict`, `npm run check:verification-fresh` |
+| 2026-03-12 17:26 | Merged PF-RUNTIME-018 PR and closed PF-POC-006 action/risk scope (`ACT-011`, `POC-010`) with exit criteria satisfied. | `https://github.com/chhhhhyoo/Moonstone/pull/9`, `docs/strategy/MILESTONES.md`, `docs/strategy/FUTURE-ACTIONS.md`, `docs/strategy/2026-03-12-pf-poc-001-risk-register.md` |

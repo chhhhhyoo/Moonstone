@@ -1,0 +1,51 @@
+[
+  {
+    "id": "transient-http-failure-recovers",
+    "prompt": "Get order status and summarize result",
+    "input": {},
+    "httpFailurePattern": [true, false],
+    "expected": {
+      "branchMode": "default",
+      "status": "completed",
+      "attempts": { "http-1": 2, "openai-success-1": 1 },
+      "executedNodeIds": ["http-1", "openai-success-1"]
+    }
+  },
+  {
+    "id": "hard-failure-routes-fallback",
+    "prompt": "Call vendor API and on failure summarize error for operator",
+    "input": {},
+    "httpFailurePattern": [true, true],
+    "expected": {
+      "branchMode": "default",
+      "status": "completed",
+      "attempts": { "http-1": 2, "openai-failure-1": 1 },
+      "executedNodeIds": ["http-1", "openai-failure-1"]
+    }
+  },
+  {
+    "id": "hard-failure-terminal-without-failure-edge",
+    "prompt": "Get order status and summarize result",
+    "input": {},
+    "httpFailurePattern": [true, true],
+    "expected": {
+      "branchMode": "default",
+      "status": "failed",
+      "attempts": { "http-1": 2 },
+      "executedNodeIds": ["http-1"]
+    }
+  },
+  {
+    "id": "retry-scheduled-crash-recovers-to-fallback",
+    "prompt": "Call vendor API and on failure summarize error for operator",
+    "input": {},
+    "httpFailurePattern": [true, true],
+    "crashEventType": "retry_scheduled",
+    "expected": {
+      "branchMode": "default",
+      "status": "completed",
+      "attempts": { "http-1": 2, "openai-failure-1": 1 },
+      "executedNodeIds": ["http-1", "openai-failure-1"]
+    }
+  }
+]
