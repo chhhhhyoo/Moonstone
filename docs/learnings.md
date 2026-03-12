@@ -183,3 +183,8 @@
 
 - Multi-edge continuation is not safe if replay only trusts observed queue entries; crashes mid-enqueue can silently drop branches.
 - Persisting a continuation plan first, then reconciling missing nodes on resume, is a low-cost way to avoid branch-loss without introducing full transactional storage.
+
+## 2026-03-12: JS Strict Type Safety Needs Explicit Union Typing In Mixed Draft Arrays
+
+- With `checkJs` enabled, array literal inference can freeze to the first element shape and reject later union members (for example HTTP node config vs OpenAI node config).
+- For compiler-style builders that push heterogeneous node types, add explicit JSDoc union typing up front so strict type checks reflect intended schema breadth.
