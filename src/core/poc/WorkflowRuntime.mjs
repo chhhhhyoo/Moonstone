@@ -159,6 +159,8 @@ export class WorkflowRuntime {
     }
 
     const input = state.input ?? {};
+    await this.reconcileContinuationGap(state, state.artifact, input);
+
     for (const command of [...state.pendingCommands.values()]) {
       await this.dispatchExistingCommand(state, state.artifact, input, command);
     }
@@ -199,10 +201,12 @@ export class WorkflowRuntime {
       pendingCommands: /** @type {Map<string, any>} */ (new Map()),
       emittedCommands: 0,
       artifact: /** @type {any} */ (null),
-      input: /** @type {Record<string, any>} */ ({})
+      input: /** @type {Record<string, any>} */ ({}),
+      lastEvent: /** @type {any} */ (null)
     };
 
     for (const event of events) {
+      state.lastEvent = event;
       switch (event.eventType) {
         case "run_started":
           state.runId = event.runId;
@@ -241,6 +245,89 @@ export class WorkflowRuntime {
     }
 
     return state;
+  }
+
+  async reconcileContinuationGap(state, artifact, input) {
+    if (state.status !== "running") {
+      return;
+    }
+    if (state.pendingCommands.size > 0 || state.queue.length > 0) {
+      return;
+    }
+    if (!state.lastReceipt) {
+      return;
+    }
+
+    const lastReceipt = state.lastReceipt;
+    if (lastReceipt.outcome === "success") {
+      await this.enqueueFrom(
+        state,
+        artifact,
+        lastReceipt.nodeId,
+        "success",
+        input,
+        `resume-success:${lastReceipt.nodeId}`
+      );
+      return;
+    }
+
+    const currentNode = artifact.nodes.find((entry) => entry.id === lastReceipt.nodeId);
+    const retryPolicy = resolveRetryPolicy({
+      artifactDefaults: artifact.defaults?.retry,
+      nodeRetry: currentNode?.retry
+    });
+
+    if (lastReceipt.attempt < retryPolicy.maxAttempts) {
+      const nextAttempt = lastReceipt.attempt + 1;
+      const backoffMs = computeBackoffMs({
+        attempt: lastReceipt.attempt,
+        backoffMs: retryPolicy.backoffMs,
+        maxBackoffMs: retryPolicy.maxBackoffMs
+      });
+
+      const hasRetryScheduledInTail =
+        state.lastEvent?.eventType === "retry_scheduled" &&
+        state.lastEvent?.nodeId === lastReceipt.nodeId &&
+        state.lastEvent?.attempt === nextAttempt;
+
+      if (!hasRetryScheduledInTail) {
+        await this.journalStore.appendEvent(state.runId, {
+          eventType: "retry_scheduled",
+          at: this.now().toISOString(),
+          runId: state.runId,
+          nodeId: lastReceipt.nodeId,
+          attempt: nextAttempt,
+          backoffMs
+        });
+      }
+
+      if (backoffMs > 0) {
+        await this.sleep(backoffMs);
+      }
+
+      await this.enqueueNode(state, state.runId, lastReceipt.nodeId, `resume-retry:${nextAttempt}`);
+      return;
+    }
+
+    const failureEdges = await this.enqueueFrom(
+      state,
+      artifact,
+      lastReceipt.nodeId,
+      "failed",
+      input,
+      `resume-failed:${lastReceipt.nodeId}`
+    );
+
+    if (failureEdges === 0 && state.lastEvent?.eventType !== "node_terminal_failed") {
+      state.status = "failed";
+      await this.journalStore.appendEvent(state.runId, {
+        eventType: "node_terminal_failed",
+        at: this.now().toISOString(),
+        runId: state.runId,
+        nodeId: lastReceipt.nodeId,
+        reason: lastReceipt.error ?? "resume-terminal-failed-without-failure-edge"
+      });
+    }
   }
 
   async enqueueNode(state, runId, nodeId, reason) {

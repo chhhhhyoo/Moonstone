@@ -173,3 +173,8 @@
 
 - A deliberate crash window (`after command emission, before receipt`) is a high-value test seam for orchestration runtimes.
 - Resume correctness depends on treating emitted-without-receipt commands as first-class pending work, not as incidental log noise.
+
+## 2026-03-12: Resume Logic Must Reconcile Missing Continuations, Not Just Pending Commands
+
+- Replaying only queued nodes and pending commands is insufficient; crashes after `receipt_recorded` or `retry_scheduled` can strand runs with no visible pending work.
+- Resume should infer continuation from the last persisted receipt/retry intent when state is `running` but queue and pending sets are empty.
