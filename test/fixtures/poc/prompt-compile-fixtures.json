@@ -33,6 +33,18 @@
     }
   },
   {
+    "id": "comparator-equals-branch",
+    "prompt": "If input.tier equals gold summarize gold path otherwise summarize standard path",
+    "expected": {
+      "branchMode": "comparator",
+      "nodeIds": ["http-1", "openai-condition-true-1", "openai-condition-false-1"],
+      "conditionEdges": [
+        { "path": "input.tier", "op": "eq", "value": "gold" },
+        { "path": "input.tier", "op": "ne", "value": "gold" }
+      ]
+    }
+  },
+  {
     "id": "failure-branch",
     "prompt": "Call vendor API and on failure summarize error for operator",
     "expected": {

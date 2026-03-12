@@ -203,3 +203,8 @@
 
 - Deterministic unit tests on isolated prompts can still miss regressions across realistic prompt classes.
 - A fixture corpus plus golden matrix assertions provides broader regression signal without introducing nondeterministic snapshot noise.
+
+## 2026-03-12: Quality Criteria Should Be Data, Not Tribal Process
+
+- A written quality checklist is insufficient unless thresholds are machine-enforced against fixture data.
+- Encoding qualification gates as a criteria JSON + gate test keeps recursive TDD loops honest and fail-closed.
