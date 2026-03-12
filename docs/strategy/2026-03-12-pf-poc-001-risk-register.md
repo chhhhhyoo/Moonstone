@@ -10,7 +10,8 @@
 | POC-004 | OpenAI/HTTP connector failures become opaque and block debugging | low | high | Structured receipt error payloads and inspect timeline command | core | done |
 | POC-005 | Governance drift reintroduces stale PF-RUNTIME assumptions in active planning artifacts | low | medium | Milestone/action hard reset and supersession markers in legacy docs | governance | done |
 | POC-006 | Crash during multi-edge continuation fan-out may enqueue only a subset of downstream nodes | low | high | Persist continuation decision atomically and replay fan-out deterministically with crash-injected conformance tests | core | done |
-| POC-007 | Prompt compiler can emit low-signal branching shapes for non-trivial natural-language prompts | medium | high | Expand compiler heuristics plus branch-focused fixtures with strict validation gates | core | in_progress |
+| POC-007 | Prompt compiler can emit low-signal branching shapes for non-trivial natural-language prompts | medium | high | Expand compiler heuristics plus branch-focused fixtures with strict validation gates | core | done |
+| POC-008 | Compiler may silently fall back to default linear graph when prompt intent is not fully understood, masking quality gaps | medium | high | Add deterministic compile diagnostics that expose applied inferences and fallback warnings | core | in_progress |
 
 ## Trigger Conditions
 
@@ -19,6 +20,7 @@
 3. New connector or runtime files land outside static/lint/test coverage.
 4. A branching node has multiple true edges and replay after crash executes only a subset.
 5. Compiler output for branching prompts lacks deterministic conditional routes.
+6. Compiler inference/fallback choices are not visible to operator during compile.
 
 ## Exit Criteria For Risk Closure
 
@@ -29,3 +31,4 @@
 5. POC-005: closed when canonical strategy trackers remain POC-first for one full milestone.
 6. POC-006: closed when fan-out continuation decisions are persisted/replayed as one deterministic step and strict verification remains green.
 7. POC-007: closed when branch-oriented compiler fixtures and strict verification are green.
+8. POC-008: closed when compile diagnostics and fallback warning paths are covered by tests and strict verification.

@@ -38,6 +38,26 @@ import { normalizeWorkflowArtifact, validateWorkflowArtifact } from "./WorkflowA
  * }} InferredComparatorCondition
  */
 
+/**
+ * @typedef {"exists" | "comparator" | "default"} BranchMode
+ */
+
+/**
+ * @typedef {{
+ *   version: string,
+ *   prompt: string,
+ *   branchMode: BranchMode,
+ *   inferred: {
+ *     httpMethod: string,
+ *     hasFailureBranch: boolean,
+ *     inputExistsPath: string | null,
+ *     inputComparisonCondition: InferredComparatorCondition | null
+ *   },
+ *   warnings: string[],
+ *   generatedNodeIds: string[]
+ * }} CompileDiagnostics
+ */
+
 function slugify(input) {
   return String(input)
     .toLowerCase()
@@ -170,7 +190,68 @@ function inferInputComparisonCondition(prompt) {
   };
 }
 
-export function compilePromptToArtifact({
+function inferBranchMode({ inputExistsPath, inputComparisonCondition }) {
+  if (inputExistsPath) {
+    return "exists";
+  }
+  if (inputComparisonCondition) {
+    return "comparator";
+  }
+  return "default";
+}
+
+function hasConditionalIntent(prompt) {
+  return /\b(?:if|when|otherwise|else)\b/i.test(prompt);
+}
+
+/**
+ * @param {{
+ *   cleanPrompt: string,
+ *   httpMethod: string,
+ *   hasFailureBranch: boolean,
+ *   inputExistsPath: string | null,
+ *   inputComparisonCondition: InferredComparatorCondition | null,
+ *   branchMode: BranchMode,
+ *   generatedNodeIds: string[]
+ * }} params
+ * @returns {CompileDiagnostics}
+ */
+function buildCompileDiagnostics({
+  cleanPrompt,
+  httpMethod,
+  hasFailureBranch,
+  inputExistsPath,
+  inputComparisonCondition,
+  branchMode,
+  generatedNodeIds
+}) {
+  /** @type {string[]} */
+  const warnings = [];
+
+  if (hasConditionalIntent(cleanPrompt) && branchMode === "default") {
+    warnings.push("Conditional intent detected but no supported condition pattern matched; emitted default success branch.");
+  }
+
+  if (inputExistsPath && inputComparisonCondition) {
+    warnings.push("Both exists and comparator condition patterns were detected; exists-pattern routing took precedence.");
+  }
+
+  return {
+    version: "0.1.0",
+    prompt: cleanPrompt,
+    branchMode,
+    inferred: {
+      httpMethod,
+      hasFailureBranch,
+      inputExistsPath,
+      inputComparisonCondition
+    },
+    warnings,
+    generatedNodeIds
+  };
+}
+
+export function compilePrompt({
   prompt,
   httpUrl = "https://example.com/api",
   openaiModel = "gpt-4o-mini",
@@ -186,6 +267,7 @@ export function compilePromptToArtifact({
   const hasFailureBranch = inferFailureBranch(cleanPrompt);
   const inputExistsPath = inferInputExistsPath(cleanPrompt);
   const inputComparisonCondition = inferInputComparisonCondition(cleanPrompt);
+  const branchMode = inferBranchMode({ inputExistsPath, inputComparisonCondition });
 
   /** @type {WorkflowNodeDraft[]} */
   const nodes = [
@@ -369,5 +451,23 @@ export function compilePromptToArtifact({
 
   const artifact = normalizeWorkflowArtifact(artifactDraft);
   validateWorkflowArtifact(artifact);
-  return artifact;
+
+  const diagnostics = buildCompileDiagnostics({
+    cleanPrompt,
+    httpMethod,
+    hasFailureBranch,
+    inputExistsPath,
+    inputComparisonCondition,
+    branchMode,
+    generatedNodeIds: artifact.nodes.map((node) => node.id)
+  });
+
+  return {
+    artifact,
+    diagnostics
+  };
+}
+
+export function compilePromptToArtifact(options) {
+  return compilePrompt(options).artifact;
 }

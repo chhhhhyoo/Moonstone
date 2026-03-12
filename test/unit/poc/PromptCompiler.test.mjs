@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { compilePromptToArtifact } from "../../../src/core/poc/PromptCompiler.mjs";
+import { compilePrompt, compilePromptToArtifact } from "../../../src/core/poc/PromptCompiler.mjs";
 
 const FIXED_NOW = () => new Date("2026-03-12T07:45:00.000Z");
 
@@ -122,4 +122,30 @@ test("compilePromptToArtifact emits comparator branches for equals prompt", () =
 
   assert.ok(equalEdge);
   assert.ok(nonEqualEdge);
+});
+
+test("compilePrompt diagnostics reports comparator branch mode for supported condition prompt", () => {
+  const { diagnostics } = compilePrompt({
+    prompt: "When input.amount >= 42 summarize premium path otherwise summarize default path",
+    now: FIXED_NOW
+  });
+
+  assert.equal(diagnostics.branchMode, "comparator");
+  assert.equal(diagnostics.inferred.inputComparisonCondition?.op, "gte");
+  assert.equal(diagnostics.inferred.inputComparisonCondition?.value, 42);
+  assert.deepEqual(diagnostics.warnings, []);
+});
+
+test("compilePrompt diagnostics warns on unsupported conditional phrasing fallback", () => {
+  const { diagnostics } = compilePrompt({
+    prompt: "If customer is vip route premium otherwise route standard",
+    now: FIXED_NOW
+  });
+
+  assert.equal(diagnostics.branchMode, "default");
+  assert.equal(diagnostics.warnings.length, 1);
+  assert.match(
+    diagnostics.warnings[0],
+    /Conditional intent detected but no supported condition pattern matched/
+  );
 });
