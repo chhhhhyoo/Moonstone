@@ -16,6 +16,7 @@
 12. Branch and PR naming must follow `docs/governance/pr-branch-policy.md`
 13. Material session closeout requires `wrap` protocol execution before termination
 14. Lifecycle automation behavior must remain mapped through enforceable Codex-native policies (no silent hook drift)
+15. PR recording rules and tactics must follow `docs/governance/RULE.md`
 
 ## Required Artifacts For Material Changes
 

@@ -9,6 +9,7 @@ const requiredPaths = [
   "specs/04-validation.md",
   "specs/05-memory-and-documentation.md",
   "docs/governance/agent-rulebook.md",
+  "docs/governance/RULE.md",
   "docs/governance/local-skill-routing.md",
   "docs/governance/pr-branch-policy.md",
   "docs/governance/verification-tier-policy.md",

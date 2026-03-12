@@ -174,6 +174,14 @@ function informativeLine(line) {
     return false;
   }
 
+  if (/^<[^>]+>\s*:?.*$/.test(withoutPrefix)) {
+    return false;
+  }
+
+  if (/^[^:]+:\s*$/.test(withoutPrefix)) {
+    return false;
+  }
+
   if (/^(none|n\/a)$/i.test(withoutPrefix)) {
     return false;
   }
@@ -204,6 +212,21 @@ export function validatePrBody(body, policy) {
     if (!section.found) {
       return { ok: false, reason: `PR body missing section: ${heading}` };
     }
+
+    if (heading === "## PR Tactics Checklist") {
+      const checklistLines = section.content
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => /^[-*]\s+\[[xX ]\]\s+/.test(line));
+      if (checklistLines.length === 0) {
+        return { ok: false, reason: "PR body section lacks checklist items: ## PR Tactics Checklist" };
+      }
+      const hasUnchecked = checklistLines.some((line) => /^[-*]\s+\[\s\]\s+/.test(line));
+      if (hasUnchecked) {
+        return { ok: false, reason: "PR body has unchecked PR tactics checklist items." };
+      }
+    }
+
     const hasInformativeContent = section.content
       .split("\n")
       .some((line) => informativeLine(line));
