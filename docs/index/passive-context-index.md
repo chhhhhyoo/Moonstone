@@ -107,6 +107,7 @@
 - `notes/spec-impact/2026-03-12-pf-poc-001-workflow-runtime.md`: 2026-03-12 PF-POC-001 Workflow Runtime Impact
 - `notes/spec-impact/2026-03-12-pf-poc-002-fanout-continuation-hardening.md`: 2026-03-12 PF-POC-002 Fan-Out Continuation Hardening Impact
 - `notes/spec-impact/2026-03-12-pf-poc-002-replay-hardening.md`: 2026-03-12 PF-POC-002 Replay Hardening Impact
+- `notes/spec-impact/2026-03-12-pf-poc-003-comparator-branching-extension.md`: 2026-03-12 PF-POC-003 Comparator Branching Extension Impact
 - `notes/spec-impact/2026-03-12-pf-poc-003-compiler-branching-quality.md`: 2026-03-12 PF-POC-003 Compiler Branching Quality Impact
 
 ## Documentation Catalog

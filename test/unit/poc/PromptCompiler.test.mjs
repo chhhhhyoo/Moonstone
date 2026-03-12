@@ -72,3 +72,54 @@ test("compilePromptToArtifact is deterministic for same prompt/options when now 
 
   assert.deepEqual(left, right);
 });
+
+test("compilePromptToArtifact emits comparator true/false branches for numeric greater-than prompt", () => {
+  const artifact = compilePromptToArtifact({
+    prompt: "When input.amount > 100 summarize premium order otherwise summarize standard order",
+    now: FIXED_NOW
+  });
+
+  const trueEdge = artifact.edges.find((edge) =>
+    edge.from === "http-1" &&
+    edge.on === "success" &&
+    edge.condition?.path === "input.amount" &&
+    edge.condition?.op === "gt" &&
+    edge.condition?.value === 100
+  );
+  const falseEdge = artifact.edges.find((edge) =>
+    edge.from === "http-1" &&
+    edge.on === "success" &&
+    edge.condition?.path === "input.amount" &&
+    edge.condition?.op === "lte" &&
+    edge.condition?.value === 100
+  );
+
+  assert.ok(trueEdge);
+  assert.ok(falseEdge);
+  assert.notEqual(trueEdge.to, falseEdge.to);
+});
+
+test("compilePromptToArtifact emits comparator branches for equals prompt", () => {
+  const artifact = compilePromptToArtifact({
+    prompt: "If input.tier equals gold summarize gold path otherwise summarize standard path",
+    now: FIXED_NOW
+  });
+
+  const equalEdge = artifact.edges.find((edge) =>
+    edge.from === "http-1" &&
+    edge.on === "success" &&
+    edge.condition?.path === "input.tier" &&
+    edge.condition?.op === "eq" &&
+    edge.condition?.value === "gold"
+  );
+  const nonEqualEdge = artifact.edges.find((edge) =>
+    edge.from === "http-1" &&
+    edge.on === "success" &&
+    edge.condition?.path === "input.tier" &&
+    edge.condition?.op === "ne" &&
+    edge.condition?.value === "gold"
+  );
+
+  assert.ok(equalEdge);
+  assert.ok(nonEqualEdge);
+});

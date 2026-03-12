@@ -26,6 +26,18 @@ import { normalizeWorkflowArtifact, validateWorkflowArtifact } from "./WorkflowA
  * }} WorkflowEdgeDraft
  */
 
+/**
+ * @typedef {"eq" | "ne" | "gt" | "gte" | "lt" | "lte"} ComparatorOp
+ */
+
+/**
+ * @typedef {{
+ *   path: string,
+ *   op: ComparatorOp,
+ *   value: string | number | boolean
+ * }} InferredComparatorCondition
+ */
+
 function slugify(input) {
   return String(input)
     .toLowerCase()
@@ -60,6 +72,104 @@ function inferInputExistsPath(prompt) {
   return `input.${match[1]}`;
 }
 
+function parseLiteralToken(rawValue) {
+  const value = String(rawValue ?? "").trim();
+
+  if ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("'") && value.endsWith("'"))) {
+    return value.slice(1, -1);
+  }
+
+  if (/^(?:true|false)$/i.test(value)) {
+    return value.toLowerCase() === "true";
+  }
+
+  if (/^-?\d+(?:\.\d+)?$/.test(value)) {
+    return Number(value);
+  }
+
+  return value;
+}
+
+function invertComparator(op) {
+  switch (op) {
+    case "eq":
+      return "ne";
+    case "ne":
+      return "eq";
+    case "gt":
+      return "lte";
+    case "gte":
+      return "lt";
+    case "lt":
+      return "gte";
+    case "lte":
+      return "gt";
+    default:
+      return null;
+  }
+}
+
+/**
+ * @param {string} prompt
+ * @returns {InferredComparatorCondition | null}
+ */
+function inferInputComparisonCondition(prompt) {
+  const symbolicMatch = /(?:if|when)\s+input\.([a-zA-Z0-9_.-]+)\s*(==|!=|>=|<=|>|<)\s*("[^"]+"|'[^']+'|[^\s,.;]+)/i.exec(prompt);
+  if (symbolicMatch) {
+    const [, rawPath, rawOperator, rawValue] = symbolicMatch;
+    /** @type {Record<string, ComparatorOp>} */
+    const operatorMap = {
+      "==": "eq",
+      "!=": "ne",
+      ">": "gt",
+      ">=": "gte",
+      "<": "lt",
+      "<=": "lte"
+    };
+    const mapped = operatorMap[rawOperator];
+    if (!mapped) {
+      return null;
+    }
+    return {
+      path: `input.${rawPath}`,
+      op: mapped,
+      value: parseLiteralToken(rawValue)
+    };
+  }
+
+  const verbalMatch = /(?:if|when)\s+input\.([a-zA-Z0-9_.-]+)\s+(is\s+not|not\s+equals?|equals?|is|greater\s+than\s+or\s+equal\s+to|greater\s+than|less\s+than\s+or\s+equal\s+to|less\s+than)\s+("[^"]+"|'[^']+'|[^\s,.;]+)/i.exec(prompt);
+  if (!verbalMatch) {
+    return null;
+  }
+
+  const [, rawPath, rawOperator, rawValue] = verbalMatch;
+  const normalizedOperator = rawOperator.toLowerCase().replace(/\s+/g, " ").trim();
+
+  /** @type {Record<string, ComparatorOp>} */
+  const operatorMap = {
+    "is": "eq",
+    "equals": "eq",
+    "equal": "eq",
+    "not equal": "ne",
+    "not equals": "ne",
+    "is not": "ne",
+    "greater than": "gt",
+    "greater than or equal to": "gte",
+    "less than": "lt",
+    "less than or equal to": "lte"
+  };
+  const mapped = operatorMap[normalizedOperator];
+  if (!mapped) {
+    return null;
+  }
+
+  return {
+    path: `input.${rawPath}`,
+    op: mapped,
+    value: parseLiteralToken(rawValue)
+  };
+}
+
 export function compilePromptToArtifact({
   prompt,
   httpUrl = "https://example.com/api",
@@ -75,6 +185,7 @@ export function compilePromptToArtifact({
   const httpMethod = inferHttpMethod(cleanPrompt);
   const hasFailureBranch = inferFailureBranch(cleanPrompt);
   const inputExistsPath = inferInputExistsPath(cleanPrompt);
+  const inputComparisonCondition = inferInputComparisonCondition(cleanPrompt);
 
   /** @type {WorkflowNodeDraft[]} */
   const nodes = [
@@ -150,6 +261,51 @@ export function compilePromptToArtifact({
         }
       }
     );
+  } else if (inputComparisonCondition) {
+    const inverseComparator = invertComparator(inputComparisonCondition.op);
+    if (inverseComparator) {
+      nodes.push(
+        {
+          id: "openai-condition-true-1",
+          type: "action.openai",
+          config: {
+            model: openaiModel,
+            prompt: `Condition '${inputComparisonCondition.path} ${inputComparisonCondition.op} ${inputComparisonCondition.value}' matched. Summarize workflow result: ${cleanPrompt} | upstream={{nodeResults.http-1.result.body}}`
+          }
+        },
+        {
+          id: "openai-condition-false-1",
+          type: "action.openai",
+          config: {
+            model: openaiModel,
+            prompt: `Condition '${inputComparisonCondition.path} ${inputComparisonCondition.op} ${inputComparisonCondition.value}' did not match. Summarize fallback workflow result: ${cleanPrompt} | upstream={{nodeResults.http-1.result.body}}`
+          }
+        }
+      );
+
+      edges.push(
+        {
+          from: "http-1",
+          to: "openai-condition-true-1",
+          on: "success",
+          condition: {
+            path: inputComparisonCondition.path,
+            op: inputComparisonCondition.op,
+            value: inputComparisonCondition.value
+          }
+        },
+        {
+          from: "http-1",
+          to: "openai-condition-false-1",
+          on: "success",
+          condition: {
+            path: inputComparisonCondition.path,
+            op: inverseComparator,
+            value: inputComparisonCondition.value
+          }
+        }
+      );
+    }
   } else {
     nodes.push({
       id: "openai-success-1",
@@ -205,7 +361,8 @@ export function compilePromptToArtifact({
       compiler: "poc-compiler-v0",
       compilerHints: {
         hasFailureBranch,
-        inputExistsPath
+        inputExistsPath,
+        inputComparisonCondition
       }
     }
   };
