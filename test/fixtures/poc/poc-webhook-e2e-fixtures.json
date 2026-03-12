@@ -1,0 +1,62 @@
+[
+  {
+    "id": "header-override-happy",
+    "prompt": "Get order status and summarize result",
+    "input": {
+      "text": "webhook-header-happy"
+    },
+    "httpRoute": "ok",
+    "runIdHeaderValue": "webhook-header-happy-001",
+    "expected": {
+      "status": "completed",
+      "attempts": {
+        "http-1": 1,
+        "openai-success-1": 1
+      },
+      "executedNodeIds": [
+        "http-1",
+        "openai-success-1"
+      ]
+    }
+  },
+  {
+    "id": "header-override-failure-branch",
+    "prompt": "Call vendor API and on failure summarize error for operator",
+    "input": {
+      "text": "webhook-header-failure"
+    },
+    "httpRoute": "always-fail",
+    "runIdHeaderValue": "webhook-header-failure-001",
+    "expected": {
+      "status": "completed",
+      "attempts": {
+        "http-1": 2,
+        "openai-failure-1": 1
+      },
+      "executedNodeIds": [
+        "http-1",
+        "openai-failure-1"
+      ]
+    }
+  },
+  {
+    "id": "uuid-fallback-happy",
+    "prompt": "Get order status and summarize result",
+    "input": {
+      "text": "webhook-fallback-happy"
+    },
+    "httpRoute": "ok",
+    "runIdHeaderValue": null,
+    "expected": {
+      "status": "completed",
+      "attempts": {
+        "http-1": 1,
+        "openai-success-1": 1
+      },
+      "executedNodeIds": [
+        "http-1",
+        "openai-success-1"
+      ]
+    }
+  }
+]

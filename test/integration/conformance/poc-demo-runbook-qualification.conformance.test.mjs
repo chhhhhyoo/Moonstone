@@ -3,12 +3,9 @@ import assert from "node:assert/strict";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-
-const execFileAsync = promisify(execFile);
+import { parseJsonOutput, runNodeScript } from "./helpers/cli-e2e-helpers.mjs";
 const THIS_FILE = fileURLToPath(import.meta.url);
 const THIS_DIR = path.dirname(THIS_FILE);
 const RUNBOOK_FIXTURES_PATH = path.resolve(THIS_DIR, "../../fixtures/poc/poc-demo-runbook-fixtures.json");
@@ -105,41 +102,6 @@ async function startDemoProviderServer() {
       });
     })
   };
-}
-
-function parseJsonOutput(stdout, commandLabel) {
-  const trimmed = String(stdout ?? "").trim();
-  if (!trimmed) {
-    throw new Error(`${commandLabel} produced empty stdout.`);
-  }
-  try {
-    return JSON.parse(trimmed);
-  } catch (error) {
-    throw new Error(
-      `${commandLabel} produced non-JSON stdout: ${error instanceof Error ? error.message : String(error)}\n${trimmed}`
-    );
-  }
-}
-
-async function runNodeScript(args, options = {}) {
-  try {
-    return await execFileAsync(process.execPath, args, {
-      cwd: process.cwd(),
-      env: {
-        ...process.env,
-        ...(options.env ?? {})
-      }
-    });
-  } catch (error) {
-    if (error && typeof error === "object" && "stdout" in error) {
-      const stdout = String(error.stdout ?? "");
-      const stderr = String(error.stderr ?? "");
-      throw new Error(
-        `Command failed: node ${args.join(" ")}\nstdout:\n${stdout}\nstderr:\n${stderr}`
-      );
-    }
-    throw error;
-  }
 }
 
 test("poc demo runbook qualification matrix is deterministic and CLI-executable", async (t) => {

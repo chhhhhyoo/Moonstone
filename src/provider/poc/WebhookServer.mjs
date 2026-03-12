@@ -18,7 +18,34 @@ async function readJsonBody(request) {
   }
 }
 
-export function startWebhookServer({ runtime, artifact, port = 3000, host = "0.0.0.0", logger = console }) {
+function resolveOptionalRunId(request, runIdHeaderName) {
+  const headerKey = String(runIdHeaderName ?? "").trim().toLowerCase();
+  if (!headerKey) {
+    return null;
+  }
+
+  const raw = request.headers[headerKey];
+  if (raw === undefined) {
+    return null;
+  }
+
+  if (Array.isArray(raw)) {
+    const first = String(raw[0] ?? "").trim();
+    return first ? first : null;
+  }
+
+  const value = String(raw).trim();
+  return value ? value : null;
+}
+
+export function startWebhookServer({
+  runtime,
+  artifact,
+  port = 3000,
+  host = "0.0.0.0",
+  logger = console,
+  runIdHeader = "x-moonstone-run-id"
+}) {
   const triggerPath = artifact.trigger.path;
   const triggerMethod = String(artifact.trigger.method ?? "POST").toUpperCase();
 
@@ -43,7 +70,8 @@ export function startWebhookServer({ runtime, artifact, port = 3000, host = "0.0
 
     try {
       const payload = await readJsonBody(request);
-      const result = await runtime.run({ artifact, input: payload });
+      const runId = resolveOptionalRunId(request, runIdHeader);
+      const result = await runtime.run({ artifact, input: payload, runId });
       response.writeHead(200, { "Content-Type": "application/json" });
       response.end(JSON.stringify(result));
     } catch (error) {
@@ -55,7 +83,7 @@ export function startWebhookServer({ runtime, artifact, port = 3000, host = "0.0
   });
 
   server.listen(port, host, () => {
-    logger.log(`POC webhook server listening on http://${host}:${port}${triggerPath}`);
+    logger.log(`POC webhook server listening on http://${host}:${port}${triggerPath} (runIdHeader=${runIdHeader})`);
   });
 
   return server;

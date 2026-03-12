@@ -11,6 +11,12 @@ async function main() {
   const artifact = await loadArtifact(artifactPath);
   const port = args.port ? Number(args.port) : 3000;
   const host = args.host ? String(args.host) : "0.0.0.0";
+  if (args["run-id-header"] === true) {
+    throw new Error("Optional --run-id-header requires a value.");
+  }
+  const runIdHeader = args["run-id-header"]
+    ? String(args["run-id-header"])
+    : "x-moonstone-run-id";
 
   const journalStore = new FileRunJournalStore({
     rootDir: args["journal-dir"] ? String(args["journal-dir"]) : ".moonstone/poc-journal"
@@ -21,7 +27,7 @@ async function main() {
     connectorExecutors: createDefaultConnectorExecutors()
   });
 
-  startWebhookServer({ runtime, artifact, port, host });
+  startWebhookServer({ runtime, artifact, port, host, runIdHeader });
 }
 
 main().catch((error) => {

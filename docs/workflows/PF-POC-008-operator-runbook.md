@@ -21,6 +21,14 @@ This command executes all required scenario classes:
 
 Acceptance condition: all subtests pass and no scenario is skipped.
 
+Run webhook E2E qualification matrix:
+
+```bash
+npm run poc:qualify:webhook
+```
+
+Webhook acceptance condition: health + trigger + inspect + replay coverage pass with deterministic run-id behavior.
+
 ## Manual Triage Flow
 
 Use this flow when debugging one workflow by hand.
@@ -63,6 +71,41 @@ npm run poc:inspect -- --run-id "demo-branch-001" --journal-dir ".moonstone/poc-
 npm run poc:replay -- --run-id "demo-branch-001" --journal-dir ".moonstone/poc-journal"
 ```
 
+## Webhook E2E Flow (Deterministic Run ID)
+
+1. Start serve runtime with explicit run-id header contract:
+
+```bash
+npm run poc:serve -- \
+  --artifact ".moonstone/artifacts/demo-branch.json" \
+  --host "127.0.0.1" \
+  --port "3100" \
+  --journal-dir ".moonstone/poc-journal" \
+  --run-id-header "x-moonstone-run-id"
+```
+
+2. Health check:
+
+```bash
+curl -sS "http://127.0.0.1:3100/health"
+```
+
+3. Trigger with deterministic run-id header:
+
+```bash
+curl -sS -X POST "http://127.0.0.1:3100/hooks/demo-branch" \
+  -H "content-type: application/json" \
+  -H "x-moonstone-run-id: webhook-demo-001" \
+  -d '{"amount":120,"text":"demo"}'
+```
+
+4. Inspect/replay with same run-id:
+
+```bash
+npm run poc:inspect -- --run-id "webhook-demo-001" --journal-dir ".moonstone/poc-journal"
+npm run poc:replay -- --run-id "webhook-demo-001" --journal-dir ".moonstone/poc-journal"
+```
+
 ## Troubleshooting Map (Risk-Linked)
 
 | symptom | likely root | command path | linked_risk_id |
@@ -71,9 +114,14 @@ npm run poc:replay -- --run-id "demo-branch-001" --journal-dir ".moonstone/poc-j
 | Replay state does not match run summary | Journal continuity or continuation recovery drift | `poc:inspect` + `poc:replay` | `POC-002`, `POC-006` |
 | Retry behavior differs from expected attempts | Retry/backoff/idempotency policy drift | `poc:run` + `poc:inspect` | `POC-003`, `POC-011` |
 | Demo cannot be reproduced quickly | Operator runbook/fixtures not aligned with strict gates | `poc:qualify:demo` | `POC-012` |
+| Webhook response runId does not match requested header | Ingress did not apply deterministic run-id override | `poc:qualify:webhook` + `poc:inspect` | `POC-013` |
 
 ## Source Of Truth
 
 1. Qualification test: `test/integration/conformance/poc-demo-runbook-qualification.conformance.test.mjs`
 2. Scenario fixtures: `test/fixtures/poc/poc-demo-runbook-fixtures.json`
 3. Qualification criteria: `test/fixtures/poc/poc-demo-quality-criteria.json`
+4. Webhook E2E test: `test/integration/conformance/poc-webhook-e2e-qualification.conformance.test.mjs`
+5. Webhook E2E fixtures/criteria:
+   - `test/fixtures/poc/poc-webhook-e2e-fixtures.json`
+   - `test/fixtures/poc/poc-webhook-e2e-quality-criteria.json`

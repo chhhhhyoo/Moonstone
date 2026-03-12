@@ -3,8 +3,9 @@
 ## Mandatory Gates
 
 1. `npm run poc:qualify:demo`
-2. `npm run verify:strict`
-3. `npm run check:verification-fresh`
+2. `npm run poc:qualify:webhook`
+3. `npm run verify:strict`
+4. `npm run check:verification-fresh`
 
 ## Criteria Contract (Machine-Enforced)
 
@@ -15,6 +16,11 @@ The qualification gate is driven by `test/fixtures/poc/poc-demo-quality-criteria
 3. Required command coverage (`requiredCommandCoverage`)
 4. Required timeline event coverage (`requiredEventTypes`)
 5. Minimum retry and failure-branch coverage thresholds
+
+Webhook qualification is additionally driven by:
+
+1. `test/fixtures/poc/poc-webhook-e2e-quality-criteria.json`
+2. `test/integration/conformance/poc-webhook-e2e-qualification.conformance.test.mjs`
 
 ## Pass/Fail Rule
 

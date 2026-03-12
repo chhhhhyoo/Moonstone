@@ -1,0 +1,23 @@
+{
+  "version": "1.0.0",
+  "minimumScenarioCount": 3,
+  "requiredScenarioIds": [
+    "header-override-happy",
+    "header-override-failure-branch",
+    "uuid-fallback-happy"
+  ],
+  "requiredCoverageSteps": [
+    "health",
+    "trigger",
+    "inspect",
+    "replay"
+  ],
+  "requiredEventTypes": [
+    "run_started",
+    "command_emitted",
+    "receipt_recorded",
+    "run_finished"
+  ],
+  "requiredHeaderOverrideScenarioCount": 2,
+  "requiredUuidFallbackScenarioCount": 1
+}

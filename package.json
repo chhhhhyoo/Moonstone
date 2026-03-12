@@ -37,6 +37,7 @@
     "poc:replay": "node scripts/poc-replay.mjs",
     "poc:inspect": "node scripts/poc-inspect.mjs",
     "poc:qualify:demo": "node --test test/integration/conformance/poc-demo-runbook-qualification.conformance.test.mjs",
+    "poc:qualify:webhook": "node --test test/integration/conformance/poc-webhook-e2e-qualification.conformance.test.mjs",
     "check:type": "tsc --noEmit -p tsconfig.json",
     "check:lint": "node scripts/check-lint.mjs",
     "lint:fix": "node scripts/lint-fix.mjs",
