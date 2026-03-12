@@ -20,7 +20,8 @@
     "## Reviewer Focus",
     "## Risk Surface",
     "## Validation And Evidence",
-    "## Milestone And Follow-ups"
+    "## Milestone And Follow-ups",
+    "## PR Tactics Checklist"
   ],
   "required_pr_body_sections": [
     "## Problem Framing",
@@ -28,10 +29,13 @@
     "## Reviewer Focus",
     "## Risk Surface",
     "## Validation And Evidence",
-    "## Milestone And Follow-ups"
+    "## Milestone And Follow-ups",
+    "## PR Tactics Checklist"
   ],
   "forbidden_pr_body_phrases": [
     "<paste commands and outcomes>",
+    "<replace with real commands and outcomes>",
+    "<path>",
     "same as title",
     "as shown in diff",
     "misc updates",

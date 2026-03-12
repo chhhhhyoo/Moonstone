@@ -17,7 +17,7 @@ function parseArgs() {
   let branch = null;
   let title = null;
   let body = null;
-  let base = "origin/main";
+  let base = null;
   let head = "HEAD";
   const changedFiles = [];
 
@@ -59,6 +59,25 @@ function parseArgs() {
   return { branch, title, body, base, head, changedFiles };
 }
 
+function refExists(ref) {
+  try {
+    execSync(`git rev-parse --verify --quiet ${ref}`, { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function detectDefaultBaseRef() {
+  const candidates = ["origin/main", "main", "origin/master", "master"];
+  for (const candidate of candidates) {
+    if (refExists(candidate)) {
+      return candidate;
+    }
+  }
+  return "HEAD";
+}
+
 function currentBranch() {
   return execSync("git branch --show-current", { encoding: "utf8" }).trim();
 }
@@ -89,18 +108,33 @@ function resolveChangedFiles(base, head) {
   }
 }
 
+function resolveCommitSubjects(base, head) {
+  try {
+    const output = execSync(`git log --format=%s ${base}..${head}`, { encoding: "utf8" });
+    const subjects = output.split("\n").map((line) => line.trim()).filter(Boolean);
+    return subjects.filter((subject) => !isSyntheticMergeSubject(subject));
+  } catch {
+    const fallback = lastCommitSubject();
+    if (!fallback || isSyntheticMergeSubject(fallback)) {
+      return [];
+    }
+    return [fallback];
+  }
+}
+
 async function main() {
   const {
     branch: explicitBranch,
     title: explicitTitle,
     body: explicitBody,
-    base,
+    base: explicitBase,
     head,
     changedFiles
   } = parseArgs();
   const branch = explicitBranch ?? currentBranch();
   const title = explicitTitle ?? process.env.PR_TITLE ?? null;
   const body = explicitBody ?? process.env.PR_BODY ?? null;
+  const base = explicitBase ?? detectDefaultBaseRef();
 
   const policy = await loadPrPolicy();
   const scopeMap = await loadScopeMap();
@@ -131,24 +165,16 @@ async function main() {
     }
   }
 
-  const commitSubject = lastCommitSubject();
-  if (commitSubject && !policy.allow_branches.includes(branch)) {
-    // In PR CI, checkout can point to a synthetic merge commit subject.
-    // Commit-subject policy applies to authored feature commits, not merge artifacts.
-    if (isSyntheticMergeSubject(commitSubject)) {
-      const files = changedFiles.length > 0 ? changedFiles : resolveChangedFiles(base, head);
-      const scope = files.length === 0
-        ? "runtime"
-        : mergeScopes(files.map((filePath) => classifyFilePath(filePath, scopeMap)));
-      console.log(`scope=${scope}`);
-      return;
-    }
-    const commitIdentity = parseCommitSubject(commitSubject, policy);
-    if (!commitIdentity.ok) {
-      throw new Error(commitIdentity.reason);
-    }
-    if (branchIdentity.id && commitIdentity.id !== branchIdentity.id) {
-      throw new Error(`Commit ID mismatch: commit=${commitIdentity.id} branch=${branchIdentity.id}`);
+  if (!policy.allow_branches.includes(branch)) {
+    const commitSubjects = resolveCommitSubjects(base, head);
+    for (const subject of commitSubjects) {
+      const commitIdentity = parseCommitSubject(subject, policy);
+      if (!commitIdentity.ok) {
+        throw new Error(commitIdentity.reason);
+      }
+      if (branchIdentity.id && commitIdentity.id !== branchIdentity.id) {
+        throw new Error(`Commit ID mismatch: commit=${commitIdentity.id} branch=${branchIdentity.id}`);
+      }
     }
   }
 

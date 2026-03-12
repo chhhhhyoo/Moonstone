@@ -4,6 +4,8 @@
 
 This document is the canonical naming and review-quality policy for Moonstone branches, pull requests, and milestone-linked delivery IDs.
 
+Companion operational rulebook: `docs/governance/RULE.md`.
+
 ## Canonical Rules
 
 1. Branch pattern (required): `codex/pf-<stream>-<id>-<slug>`
@@ -26,6 +28,7 @@ Required sections (in this order):
 4. `## Risk Surface`
 5. `## Validation And Evidence`
 6. `## Milestone And Follow-ups`
+7. `## PR Tactics Checklist`
 
 Required content behavior:
 
@@ -33,12 +36,21 @@ Required content behavior:
 2. Include at least one concrete reviewer hotspot with file-level focus.
 3. State realistic regression risk and mitigation, including known unknowns.
 4. Include validation evidence and confidence limits.
+5. Mark all `## PR Tactics Checklist` items as completed (`[x]`) before merge.
 
 Forbidden low-signal patterns:
 
 1. Placeholder or TODO-style content (`tbd`, `todo`, template placeholders).
 2. Trivial recap language (`same as title`, `as shown in diff`, `misc updates`).
 3. Section shells with no substantive content.
+
+## PR Record Tactics
+
+1. Keep one dominant milestone identity per PR.
+2. Prioritize reviewer hotspots and design rationale over file recap.
+3. Always include concrete verification command outcomes.
+4. Explicitly state residual risk and confidence limits.
+5. Link follow-up action IDs from `docs/strategy/FUTURE-ACTIONS.md` (or `none`).
 
 ## First Bootstrap Naming
 

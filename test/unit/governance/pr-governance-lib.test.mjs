@@ -89,6 +89,12 @@ test("PR body validation accepts insight-first structured body", async () => {
 ## Milestone And Follow-ups
 - Milestone: PF-RUNTIME-002 in progress.
 - Follow-up: PF-ACT-012 for transition timeout telemetry.
+
+## PR Tactics Checklist
+- [x] Single dominant milestone identity
+- [x] Reviewer hotspots include explicit file paths and what to verify
+- [x] Validation command outcomes are concrete and reproducible
+- [x] Residual risk and confidence limits are stated
 `.trim();
   const result = validatePrBody(body, policy);
   assert.equal(result.ok, true);
@@ -110,10 +116,41 @@ test("PR body validation rejects low-signal placeholders", async () => {
 - tbd
 
 ## Validation And Evidence
-- <paste commands and outcomes>
+- <replace with real commands and outcomes>
 
 ## Milestone And Follow-ups
 - none
+
+## PR Tactics Checklist
+- [ ] Single dominant milestone identity
+`.trim();
+  const result = validatePrBody(body, policy);
+  assert.equal(result.ok, false);
+});
+
+test("PR body validation rejects template shell content", async () => {
+  const policy = await loadPrPolicy();
+  const body = `
+## Problem Framing
+- Operational problem being solved:
+
+## Solution Shape
+- Core design decisions and boundaries:
+
+## Reviewer Focus
+- <path>: what is non-obvious and what to verify
+
+## Risk Surface
+- Primary regression vectors:
+
+## Validation And Evidence
+- Commands and outcomes:
+
+## Milestone And Follow-ups
+- Milestone ID and current state:
+
+## PR Tactics Checklist
+- [x] Single dominant milestone identity
 `.trim();
   const result = validatePrBody(body, policy);
   assert.equal(result.ok, false);
