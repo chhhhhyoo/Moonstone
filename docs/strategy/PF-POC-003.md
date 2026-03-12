@@ -3,7 +3,7 @@
 **Milestone**: `PF-POC-003`
 **Execution Branch**: `codex/pf-runtime-015-compiler-comparator-branches`
 **Owner**: `core`
-**Status**: `in_progress`
+**Status**: `done`
 **Last Updated**: `2026-03-12`
 
 ## Objective
@@ -55,3 +55,4 @@ Increase prompt-to-artifact quality for non-trivial prompts by producing determi
 | 2026-03-12 17:03 | Added RED-first comparator branch tests for numeric (`>`) and verbal equality (`equals`) prompt patterns. | `test/unit/poc/PromptCompiler.test.mjs`, `node --test test/unit/poc/PromptCompiler.test.mjs` |
 | 2026-03-12 17:04 | Implemented comparator inference + inverse comparator mapping to build deterministic true/false conditional success edges. | `src/core/poc/PromptCompiler.mjs` |
 | 2026-03-12 17:04 | Validated comparator compile/validate smoke and strict regression gates green. | `npm run poc:compile -- --prompt "When input.amount > 100 post order and summarize premium path" --out .moonstone/artifacts/pf-poc-003-comparator.json`, `npm run poc:validate -- --artifact .moonstone/artifacts/pf-poc-003-comparator.json`, `npm run verify:strict` |
+| 2026-03-12 17:01 | Merged comparator extension PR and closed PF-POC-003 action scope (`ACT-006`) with milestone exit criteria satisfied. | `https://github.com/chhhhhyoo/Moonstone/pull/6`, `docs/strategy/MILESTONES.md`, `docs/strategy/FUTURE-ACTIONS.md` |

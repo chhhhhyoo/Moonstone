@@ -109,6 +109,7 @@
 - `notes/spec-impact/2026-03-12-pf-poc-002-replay-hardening.md`: 2026-03-12 PF-POC-002 Replay Hardening Impact
 - `notes/spec-impact/2026-03-12-pf-poc-003-comparator-branching-extension.md`: 2026-03-12 PF-POC-003 Comparator Branching Extension Impact
 - `notes/spec-impact/2026-03-12-pf-poc-003-compiler-branching-quality.md`: 2026-03-12 PF-POC-003 Compiler Branching Quality Impact
+- `notes/spec-impact/2026-03-12-pf-poc-004-compile-diagnostics.md`: 2026-03-12 PF-POC-004 Compile Diagnostics Impact
 
 ## Documentation Catalog
 

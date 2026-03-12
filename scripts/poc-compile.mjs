@@ -1,5 +1,5 @@
 import path from "node:path";
-import { compilePromptToArtifact } from "../src/core/poc/PromptCompiler.mjs";
+import { compilePrompt } from "../src/core/poc/PromptCompiler.mjs";
 import { parseArgs, requireArg, writeJsonFile } from "./poc-common.mjs";
 
 async function main() {
@@ -8,7 +8,7 @@ async function main() {
   const httpUrl = args["http-url"] ? String(args["http-url"]) : undefined;
   const openaiModel = args.model ? String(args.model) : undefined;
 
-  const artifact = compilePromptToArtifact({
+  const { artifact, diagnostics } = compilePrompt({
     prompt,
     httpUrl,
     openaiModel
@@ -21,11 +21,23 @@ async function main() {
   const outPath = path.resolve(process.cwd(), outArg);
   await writeJsonFile(outPath, artifact);
 
+  let diagnosticsPath = null;
+  if (args["diagnostics-out"] && args["diagnostics-out"] !== true) {
+    diagnosticsPath = path.resolve(process.cwd(), String(args["diagnostics-out"]));
+    await writeJsonFile(diagnosticsPath, diagnostics);
+  }
+
   console.log(JSON.stringify({
     ok: true,
     artifactId: artifact.artifactId,
     artifactVersion: artifact.artifactVersion,
-    outputPath: outPath
+    outputPath: outPath,
+    diagnostics: {
+      branchMode: diagnostics.branchMode,
+      warnings: diagnostics.warnings,
+      inferred: diagnostics.inferred
+    },
+    diagnosticsPath
   }, null, 2));
 }
 

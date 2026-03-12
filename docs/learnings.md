@@ -193,3 +193,8 @@
 
 - In a fan-out edge model, adding a conditional edge plus an unconditional fallback edge causes double execution when the condition is true.
 - For compiler-generated if/else behavior, emit two explicit complementary conditions (`op` and inverse `op`) so branch execution remains deterministic and mutually exclusive.
+
+## 2026-03-12: Fail-Closed Compilers Still Need Visible Diagnostics
+
+- A deterministic fallback to default graph shape is safer than guessing, but silent fallback hides prompt/artifact mismatch risk.
+- Exposing inference mode and warnings at compile time catches bad prompt contracts earlier and reduces runtime debugging churn.

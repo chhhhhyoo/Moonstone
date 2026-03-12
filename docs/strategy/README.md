@@ -13,6 +13,7 @@ This directory stores milestone-level planning, risk tracking, and future action
 2. [2026-03-12-pf-poc-001-risk-register.md](2026-03-12-pf-poc-001-risk-register.md)
 3. [PF-POC-002.md](PF-POC-002.md)
 4. [PF-POC-003.md](PF-POC-003.md)
+5. [PF-POC-004.md](PF-POC-004.md)
 
 ## Superseded Context Docs
 
