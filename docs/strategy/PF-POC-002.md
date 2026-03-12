@@ -3,7 +3,7 @@
 **Milestone**: `PF-POC-002`
 **Execution Branch**: `codex/pf-runtime-013-fanout-replay-atomicity`
 **Owner**: `core`
-**Status**: `in_progress`
+**Status**: `done`
 **Last Updated**: `2026-03-12`
 
 ## Objective
@@ -45,3 +45,4 @@ Close replay/recovery correctness gaps so interrupted runs resume deterministica
 | 2026-03-12 16:34 | Implemented continuation planning/reconciliation events in runtime (`continuation_planned`, `continuation_applied`, `continuation_recovered`) and validated targeted replay suite green. | `src/core/poc/WorkflowRuntime.mjs`, `node --test test/integration/conformance/poc-replay.conformance.test.mjs` |
 | 2026-03-12 16:36 | Updated trackers/log/spec-impact to register ACT-008 execution and fan-out residual-risk handling under PF-POC-002 governance flow. | `docs/strategy/FUTURE-ACTIONS.md`, `docs/logs/2026-03-12.md`, `notes/spec-impact/2026-03-12-pf-poc-002-fanout-continuation-hardening.md` |
 | 2026-03-12 16:39 | Ran full strict gate after fan-out hardening and passed all type/lint/contracts/unit/conformance checks. | `npm run verify:strict` |
+| 2026-03-12 16:44 | Post-merge tracker refresh: PF-POC-002 closed, ACT-008 marked done, and next milestone PF-POC-003 moved in progress. | `docs/strategy/MILESTONES.md`, `docs/strategy/FUTURE-ACTIONS.md` |

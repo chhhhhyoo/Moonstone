@@ -5,11 +5,12 @@
 | risk_id | description | likelihood | impact | mitigation | owner | status |
 |---|---|---|---|---|---|---|
 | POC-001 | Compiler generates artifact shapes that pass JSON checks but fail runtime assumptions | low | high | Canonical artifact validator plus compile/validate integration tests | core | done |
-| POC-002 | Crash occurs after command emission and before receipt persistence, creating duplicate side-effect risk | low | critical | Replay + resume path with deterministic idempotency keys and crash-injection tests | core | in_progress |
+| POC-002 | Crash occurs after command emission and before receipt persistence, creating duplicate side-effect risk | low | critical | Replay + resume path with deterministic idempotency keys and crash-injection tests | core | done |
 | POC-003 | Retry policy drifts across nodes due to inconsistent default/override precedence | low | medium | Single retry resolver with unit tests for cap/backoff behavior | core | done |
 | POC-004 | OpenAI/HTTP connector failures become opaque and block debugging | low | high | Structured receipt error payloads and inspect timeline command | core | done |
 | POC-005 | Governance drift reintroduces stale PF-RUNTIME assumptions in active planning artifacts | low | medium | Milestone/action hard reset and supersession markers in legacy docs | governance | done |
-| POC-006 | Crash during multi-edge continuation fan-out may enqueue only a subset of downstream nodes | low | high | Persist continuation decision atomically and replay fan-out deterministically with crash-injected conformance tests | core | in_progress |
+| POC-006 | Crash during multi-edge continuation fan-out may enqueue only a subset of downstream nodes | low | high | Persist continuation decision atomically and replay fan-out deterministically with crash-injected conformance tests | core | done |
+| POC-007 | Prompt compiler can emit low-signal branching shapes for non-trivial natural-language prompts | medium | high | Expand compiler heuristics plus branch-focused fixtures with strict validation gates | core | in_progress |
 
 ## Trigger Conditions
 
@@ -17,6 +18,7 @@
 2. Replay of the same run-id yields non-deterministic pending-command state.
 3. New connector or runtime files land outside static/lint/test coverage.
 4. A branching node has multiple true edges and replay after crash executes only a subset.
+5. Compiler output for branching prompts lacks deterministic conditional routes.
 
 ## Exit Criteria For Risk Closure
 
@@ -26,3 +28,4 @@
 4. POC-004: closed when `poc:inspect` exposes actionable timeline diagnostics.
 5. POC-005: closed when canonical strategy trackers remain POC-first for one full milestone.
 6. POC-006: closed when fan-out continuation decisions are persisted/replayed as one deterministic step and strict verification remains green.
+7. POC-007: closed when branch-oriented compiler fixtures and strict verification are green.
