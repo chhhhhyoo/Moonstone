@@ -31,6 +31,12 @@
 - `npm run conformance:lint`
 - `npm run docs:index`
 - `npm run lint:fix`
+- `npm run poc:compile`
+- `npm run poc:inspect`
+- `npm run poc:replay`
+- `npm run poc:run`
+- `npm run poc:serve`
+- `npm run poc:validate`
 - `npm run refresh:cognitive-map`
 - `npm run spec:lint`
 - `npm run spec:scaffold`
@@ -61,12 +67,13 @@
 - `factory-init`
 - `factory-scaffold`
 - `finishing-a-development-branch`
-- `moonstone-transformer`
 - `git-craft-commit`
 - `hermeneia`
 - `high-integrity-commit`
 - `katalepsis`
+- `knowledge-bridge`
 - `manage-skills`
+- `moonstone-transformer`
 - `orchestrator`
 - `planning-with-files`
 - `prothesis`
@@ -97,6 +104,7 @@
 - `notes/spec-impact/2026-03-09-moonstone-bootstrap.md`: Spec Impact: Moonstone Bootstrap
 - `notes/spec-impact/2026-03-09-runtime-toolchain-gates.md`: Spec Impact: Runtime Toolchain Gates
 - `notes/spec-impact/2026-03-10-kernel-envelope-contracts.md`: Spec Impact: PF-RUNTIME-003 Kernel Envelope Contracts
+- `notes/spec-impact/2026-03-12-pf-poc-001-workflow-runtime.md`: 2026-03-12 PF-POC-001 Workflow Runtime Impact
 
 ## Documentation Catalog
 
@@ -119,6 +127,7 @@
 - `docs/governance/local-skill-routing.md`
 - `docs/governance/pr-branch-policy.md`
 - `docs/governance/repo-family-charter.md`
+- `docs/governance/RULE.md`
 - `docs/governance/session-automation-policy.md`
 - `docs/governance/verification-tier-policy.md`
 - `docs/governance/workspace-safety-policy.md`
@@ -139,6 +148,11 @@
 - `src/core/KernelEnvelope.mjs`
 - `src/core/OperationReceipt.mjs`
 - `src/core/Orchestrator.mjs`
+- `src/core/poc/OperationEnvelope.mjs`
+- `src/core/poc/PromptCompiler.mjs`
+- `src/core/poc/RetryPolicy.mjs`
+- `src/core/poc/WorkflowArtifact.mjs`
+- `src/core/poc/WorkflowRuntime.mjs`
 - `src/core/SessionKey.mjs`
 
 ## Agent Module Families

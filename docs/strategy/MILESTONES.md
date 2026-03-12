@@ -4,8 +4,8 @@ Canonical milestone tracker for Moonstone.
 
 | milestone_id | title | status | owner | target_window | depends_on | exit_criteria |
 |---|---|---|---|---|---|---|
-| PF-BOOT-001 | Bootstrap baseline + governance + first PR setup | done | core | 2026-Q1 | none | First bootstrap PR merged with `verify:strict` green |
-| PF-RUNTIME-002 | TypeScript + ESLint + strict compile gates | done | core | 2026-Q1 | PF-BOOT-001 | TS compile and ESLint become required strict gates |
-| PF-RUNTIME-003 | Durable Execution Core + Second Agent Parity | in_progress | core | 2026-Q1 | PF-RUNTIME-002 | Pure Moonstone transitions; Outbox/Inbox relay; Multi-agent crash/resume tests green |
-| PF-GOV-001 | PR governance automation hardening in CI | done | governance | 2026-Q1 | PF-BOOT-001 | PR naming/scope/template checks are mandatory in CI |
-| PF-CONF-001 | MSW-backed provider conformance and strict stage-2 gates | planned | qa | 2026-Q2 | PF-RUNTIME-003 | Stage-2 conformance gates are enforced and stable |
+| PF-POC-001 | CLI-first workflow-builder POC (Webhook + HTTP + OpenAI) | in_progress | core | 2026-Q1 | none | POC commands (poc:compile, poc:validate, poc:run, poc:serve, poc:replay, poc:inspect) run end-to-end with replay evidence and strict verification green |
+| PF-POC-002 | Durable replay hardening for command/receipt execution | planned | core | 2026-Q2 | PF-POC-001 | Crash-injected run can resume from append-only journal without duplicate side effects |
+| PF-POC-003 | Prompt-to-workflow quality and branching coverage expansion | planned | core | 2026-Q2 | PF-POC-001 | Compiler output quality, branch comparator coverage, and retry policy conformance are stable under strict gates |
+| PF-GOV-001 | PR governance automation hardening in CI | done | governance | 2026-Q1 | none | PR naming/scope/template checks are mandatory in CI |
+| PF-LEGACY-001 | PF-RUNTIME-003 archival and supersession cleanup | done | core | 2026-Q1 | PF-POC-001 | Runtime-003 strategy docs explicitly marked superseded by PF-POC-001 |

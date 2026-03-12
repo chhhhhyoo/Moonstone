@@ -8,7 +8,8 @@ function main() {
       "--max-warnings",
       "0",
       "src/core/**/*.mjs",
-      "src/service/**/*.mjs"
+      "src/service/**/*.mjs",
+      "src/provider/poc/**/*.mjs"
     ],
     {
       stdio: "inherit"

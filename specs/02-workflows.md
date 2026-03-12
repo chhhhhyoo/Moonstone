@@ -2,26 +2,24 @@
 
 ## New Request Flow
 
-1. Adapter receives transport payload.
-2. Adapter normalizes to `ConversationContext`.
-3. Orchestrator resolves active session by hierarchical key.
-4. If session exists, resume agent.
-5. If no session, route intent, create agent, and begin state evaluation.
-6. Agent evaluates state as a pure function and yields `OperationCommand`s.
-7. Orchestrator persists the state transition and commands to the Event Journal (`ActorStore`).
-8. Orchestrator delegates commands to `ProviderProxy` for side-effect execution.
+1. `poc:compile` converts prompt intent into a `WorkflowArtifact`.
+2. `poc:validate` enforces trigger/node/edge/retry contract validity.
+3. `poc:run` or `poc:serve` loads artifact and initializes a run journal entry.
+4. Runtime evaluates graph progression as pure state transitions and emits an `OperationCommand`.
+5. Connector executor (`action.http`/`action.openai`) performs side effects.
+6. Runtime persists an `OperationReceipt` and routes to next node by edge rules (`always|success|failed` + condition).
+7. Terminal state is recorded with `run_finished`.
 
 ## Resume Flow (Inbox/Receipt)
 
-1. `ProviderProxy` completes side-effect and returns an `OperationReceipt` with a `CorrelationId`.
-2. Orchestrator matches `CorrelationId` to an existing `SessionKey`.
-3. Stored actor/agent wakes up and receives the `OperationReceipt` as an event.
-4. Agent evaluates new state and yields next commands.
-5. Terminal states clear actor/session or mark workflow complete.
+1. `poc:replay` reconstructs run state from append-only journal events.
+2. Pending command windows (`command_emitted` without `receipt_recorded`) are surfaced explicitly.
+3. Resume path re-dispatches pending commands with deterministic idempotency keys.
+4. Runtime continues queue processing and records final status.
 
 ## Failure Flow
 
-1. Provider proxy failure yields a failure `OperationReceipt`.
-2. Orchestrator injects the failure receipt into the agent for deterministic handling (e.g., transition to a failed/retry state).
-3. Contract mismatch during compilation/validation returns an immediate, controlled failure result.
-4. Fail-open behavior on required checks is prohibited.
+1. Connector failure yields a failure `OperationReceipt` and retry decision.
+2. Retry uses capped exponential backoff and deterministic `(runId,nodeId,attempt)` idempotency key.
+3. On retry exhaustion, failure edges are evaluated; missing failure path marks terminal failure.
+4. `poc:inspect` exposes full event timeline for diagnosis.

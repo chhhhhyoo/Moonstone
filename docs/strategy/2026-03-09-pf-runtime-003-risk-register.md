@@ -1,5 +1,8 @@
 # PF-RUNTIME-003 Risk Register (2026-03-09)
 
+> Superseded on 2026-03-12 by `PF-POC-001`:
+> `docs/strategy/2026-03-12-pf-poc-001-risk-register.md`
+
 ## Key Risks
 
 | risk_id | description | likelihood | impact | mitigation | owner | status |

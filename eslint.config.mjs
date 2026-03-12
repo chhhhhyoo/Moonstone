@@ -11,7 +11,8 @@ export default [
   {
     files: [
       "src/core/**/*.mjs",
-      "src/service/**/*.mjs"
+      "src/service/**/*.mjs",
+      "src/provider/poc/**/*.mjs"
     ],
     languageOptions: {
       ecmaVersion: "latest",

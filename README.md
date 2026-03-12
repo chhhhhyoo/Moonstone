@@ -19,6 +19,12 @@ It combines:
 
 - `npm run verify`: stage-0 hard gates
 - `npm run verify:strict`: stage-0 + stage-1/2 strict gates
+- `npm run poc:compile -- --prompt "..."`
+- `npm run poc:validate -- --artifact <path>`
+- `npm run poc:run -- --artifact <path> --input <path|json>`
+- `npm run poc:serve -- --artifact <path>`
+- `npm run poc:replay -- --run-id <id>`
+- `npm run poc:inspect -- --run-id <id>`
 - `npm run check:strategy`: validate milestones/actions schema, IDs, and linkage
 - `npm run check:text-hygiene`: tabs/trailing whitespace/EOF newline checks
 - `npm run check:type`: TypeScript compile gate (`tsc --noEmit`)

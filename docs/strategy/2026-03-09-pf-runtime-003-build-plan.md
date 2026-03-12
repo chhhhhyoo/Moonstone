@@ -1,5 +1,8 @@
 # PF-RUNTIME-003 Build Plan (2026-03-09)
 
+> Superseded on 2026-03-12 by `PF-POC-001`:
+> `docs/strategy/2026-03-12-pf-poc-001-build-plan.md`
+
 ## Objective
 
 Prove multi-agent runtime viability and Durable Execution semantics by implementing an Outbox/Inbox (Command/Receipt) pattern, adding a second active Moonstone agent, and passing crash-resilient parity + resume-flow pressure checks.

@@ -12,6 +12,7 @@ Moonstone is the runtime plane for orchestration, session continuity, and agent 
 4. Agents communicate with the outside world by yielding `OperationCommand`s (Outbox) and waking upon `OperationReceipt`s (Inbox).
 5. Provider proxies are the only place for HTTP/protocol details and side-effect execution.
 6. Governance checks live in scripts and docs, not in ad hoc runtime branching.
+7. Workflow-builder POC artifacts must remain declarative and fail closed (`WorkflowArtifact` schema validation before execution).
 
 ## Layer Model
 
@@ -20,6 +21,9 @@ Moonstone is the runtime plane for orchestration, session continuity, and agent 
 3. `src/agent`: pure Moonstone agents and agent metadata (compiled from prompt/graph)
 4. `src/provider`: domain provider interfaces and proxy implementations for executing side-effects
 5. `src/service`: actor/session storage (Event Journal) and messaging abstractions
+6. `src/core/poc`: workflow artifact validation, retry/idempotency policy, and graph runtime
+7. `src/provider/poc`: webhook/http/openai POC connectors
+8. `src/service/poc`: append-only file-backed run journal
 
 ## State Model
 
