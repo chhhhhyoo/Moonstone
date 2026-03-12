@@ -178,3 +178,8 @@
 
 - Replaying only queued nodes and pending commands is insufficient; crashes after `receipt_recorded` or `retry_scheduled` can strand runs with no visible pending work.
 - Resume should infer continuation from the last persisted receipt/retry intent when state is `running` but queue and pending sets are empty.
+
+## 2026-03-12: Fan-Out Needs Planned-Then-Applied Journal Semantics
+
+- Multi-edge continuation is not safe if replay only trusts observed queue entries; crashes mid-enqueue can silently drop branches.
+- Persisting a continuation plan first, then reconciling missing nodes on resume, is a low-cost way to avoid branch-loss without introducing full transactional storage.

@@ -49,15 +49,18 @@ function replayArtifact() {
 }
 
 class CrashAfterPersistEventJournalStore extends FileRunJournalStore {
-  constructor({ rootDir, crashEventType, maxCrashes = 1 }) {
+  constructor({ rootDir, crashEventType, maxCrashes = 1, shouldCrash = null }) {
     super({ rootDir });
     this.crashEventType = crashEventType;
     this.remainingCrashes = maxCrashes;
+    this.shouldCrash = shouldCrash;
   }
 
   async appendEvent(runId, event) {
     await super.appendEvent(runId, event);
-    if (event?.eventType === this.crashEventType && this.remainingCrashes > 0) {
+    const matchesEventType = event?.eventType === this.crashEventType;
+    const matchesPredicate = this.shouldCrash ? this.shouldCrash(event) : true;
+    if (matchesEventType && matchesPredicate && this.remainingCrashes > 0) {
       this.remainingCrashes -= 1;
       throw new Error(`Injected crash after persisting event '${this.crashEventType}'.`);
     }
@@ -247,6 +250,112 @@ test("WorkflowRuntime resume recovers when crash happens after retry scheduling"
   assert.equal(resumed.status, "completed");
   assert.equal(callCount, 2);
   assert.equal(resumed.nodeResults["http-1"].outcome, "success");
+
+  await rm(tempRoot, { recursive: true, force: true });
+});
+
+test("WorkflowRuntime resume recovers full fan-out when crash happens mid enqueue loop", async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), "moonstone-poc-replay-fanout-crash-"));
+  const journalStore = new CrashAfterPersistEventJournalStore({
+    rootDir: tempRoot,
+    crashEventType: "node_enqueued",
+    shouldCrash: (event) => String(event?.reason ?? "").startsWith("success:http-1")
+  });
+
+  let httpCount = 0;
+  let openaiOneCount = 0;
+  let openaiTwoCount = 0;
+
+  const runtime = new WorkflowRuntime({
+    journalStore,
+    connectorExecutors: {
+      "action.http": async () => {
+        httpCount += 1;
+        return {
+          status: 200,
+          body: {
+            ok: true
+          }
+        };
+      },
+      "action.openai": async ({ command }) => {
+        if (command.nodeId === "openai-1") {
+          openaiOneCount += 1;
+        }
+        if (command.nodeId === "openai-2") {
+          openaiTwoCount += 1;
+        }
+        return {
+          model: "gpt-4o-mini",
+          outputText: command.nodeId
+        };
+      }
+    },
+    sleep: async () => {}
+  });
+
+  const artifact = {
+    ...replayArtifact(),
+    nodes: [
+      replayArtifact().nodes[0],
+      {
+        id: "openai-1",
+        type: "action.openai",
+        config: {
+          model: "gpt-4o-mini",
+          prompt: "left branch"
+        }
+      },
+      {
+        id: "openai-2",
+        type: "action.openai",
+        config: {
+          model: "gpt-4o-mini",
+          prompt: "right branch"
+        }
+      }
+    ],
+    edges: [
+      {
+        from: "trigger",
+        to: "http-1",
+        on: "always"
+      },
+      {
+        from: "http-1",
+        to: "openai-1",
+        on: "success"
+      },
+      {
+        from: "http-1",
+        to: "openai-2",
+        on: "success"
+      }
+    ]
+  };
+
+  await assert.rejects(
+    async () => {
+      await runtime.run({
+        artifact,
+        input: {
+          text: "fanout"
+        },
+        runId: "run-replay-fanout-crash-1"
+      });
+    },
+    /Injected crash after persisting event 'node_enqueued'/
+  );
+
+  const replayBeforeResume = await runtime.replay({ runId: "run-replay-fanout-crash-1" });
+  assert.equal(replayBeforeResume.status, "running");
+  assert.equal(replayBeforeResume.pendingCommands.length, 0);
+
+  const resumed = await runtime.resume({ runId: "run-replay-fanout-crash-1" });
+  assert.equal(resumed.status, "completed");
+  assert.equal(httpCount, 1);
+  assert.equal(openaiOneCount, 1);
+  assert.equal(openaiTwoCount, 1);
 
   await rm(tempRoot, { recursive: true, force: true });
 });

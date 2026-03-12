@@ -105,6 +105,7 @@
 - `notes/spec-impact/2026-03-09-runtime-toolchain-gates.md`: Spec Impact: Runtime Toolchain Gates
 - `notes/spec-impact/2026-03-10-kernel-envelope-contracts.md`: Spec Impact: PF-RUNTIME-003 Kernel Envelope Contracts
 - `notes/spec-impact/2026-03-12-pf-poc-001-workflow-runtime.md`: 2026-03-12 PF-POC-001 Workflow Runtime Impact
+- `notes/spec-impact/2026-03-12-pf-poc-002-fanout-continuation-hardening.md`: 2026-03-12 PF-POC-002 Fan-Out Continuation Hardening Impact
 - `notes/spec-impact/2026-03-12-pf-poc-002-replay-hardening.md`: 2026-03-12 PF-POC-002 Replay Hardening Impact
 
 ## Documentation Catalog
