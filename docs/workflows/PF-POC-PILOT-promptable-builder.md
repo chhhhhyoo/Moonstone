@@ -367,6 +367,37 @@ Fail-closed synthesis guardrails:
    - trigger: one synthesized direction mixes conflicting explicit event hints (for example `on success` + `on failed`)
    - action: keep one explicit `on <event>` per direction or split into separate directions
 
+## Intent-Synthesis Qualification Gate (PF-POC-026)
+
+Run this dedicated gate whenever intent-synthesis behavior is modified:
+
+```bash
+npm run poc:qualify:intent-synthesis
+```
+
+Gate scope:
+
+1. synthesized high-level intent proposal pack diagnostics contract:
+   - `mode = chef-intent-pack-v1`
+   - `synthesisApplied = true`
+   - deterministic `derivedClauses[]` and `intentSignals[]`
+2. explicit `then` pack invariance contract:
+   - `mode = bounded-operation-direction-pack-v1`
+   - `synthesisApplied = false`
+   - empty `derivedClauses[]` and `intentSignals[]`
+3. bounded conflict fail-closed contract:
+   - `CHEF_DIRECTION_INTENT_MULTI_URL_CONFLICT`
+   - `CHEF_DIRECTION_INTENT_EVENT_CONFLICT`
+4. vague direction fail-closed fallback:
+   - `CHEF_DIRECTION_UNSUPPORTED`
+5. one apply path with inspect/replay continuity evidence.
+
+Operator guidance:
+
+1. use this gate for synthesis-focused regressions before running full strict verification,
+2. if this gate fails, do not broaden language patterns in the same slice,
+3. remediate deterministic diagnostics/error-code drift first, then rerun strict gates.
+
 ## Direct-Apply Mutation Check (PF-POC-015)
 
 ```bash

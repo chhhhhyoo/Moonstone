@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "minimumScenarioCount": 5,
+  "requiredScenarioIds": [
+    "intent-synthesized-pack-success",
+    "intent-explicit-pack-invariance",
+    "intent-multi-url-conflict",
+    "intent-event-conflict",
+    "intent-unsupported-vague"
+  ],
+  "requiredCommandCoverage": [
+    "poc:pilot",
+    "poc:inspect",
+    "poc:replay",
+    "poc:qualify:intent-synthesis"
+  ],
+  "requiredEventTypes": [
+    "run_started",
+    "command_emitted",
+    "receipt_recorded",
+    "run_finished"
+  ],
+  "requiredConflictScenarioCount": 2,
+  "requiredUnsupportedScenarioCount": 1,
+  "requiredApplyScenarioCount": 1
+}

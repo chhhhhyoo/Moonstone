@@ -1,0 +1,50 @@
+[
+  {
+    "id": "intent-synthesized-pack-success",
+    "prompt": "POST https://api.example.com/orders then summarize result",
+    "direction": "Please check GET https://api.example.com/orders/summary and summarize result for the operator.",
+    "expectedProposalStatus": "proposal_pack_only",
+    "expectedDiagnosticsMode": "chef-intent-pack-v1",
+    "expectedSynthesisApplied": true,
+    "expectedDerivedClauses": [
+      "After latest request step, add an API check step using GET https://api.example.com/orders/summary.",
+      "After latest request step, add a summary step for the operator on success."
+    ],
+    "expectedIntentSignals": [
+      "http_url:https://api.example.com/orders/summary",
+      "http_intent",
+      "summary_intent",
+      "target:operator"
+    ],
+    "expectApply": true
+  },
+  {
+    "id": "intent-explicit-pack-invariance",
+    "prompt": "POST https://api.example.com/orders then summarize result",
+    "direction": "After http-1, add an API check step using GET https://api.example.com/orders/summary. then connect http-2 to openai-success-1 on success.",
+    "expectedProposalStatus": "proposal_pack_only",
+    "expectedDiagnosticsMode": "bounded-operation-direction-pack-v1",
+    "expectedSynthesisApplied": false,
+    "expectedDerivedClauses": [],
+    "expectedIntentSignals": [],
+    "expectApply": false
+  },
+  {
+    "id": "intent-multi-url-conflict",
+    "prompt": "POST https://api.example.com/orders then summarize result",
+    "direction": "Please check GET https://api.example.com/orders/summary and GET https://api.example.com/orders/audit and summarize result for the operator.",
+    "expectedProposalErrorCode": "CHEF_DIRECTION_INTENT_MULTI_URL_CONFLICT"
+  },
+  {
+    "id": "intent-event-conflict",
+    "prompt": "POST https://api.example.com/orders then summarize result",
+    "direction": "Please check GET https://api.example.com/orders/summary and summarize result on success and on failed.",
+    "expectedProposalErrorCode": "CHEF_DIRECTION_INTENT_EVENT_CONFLICT"
+  },
+  {
+    "id": "intent-unsupported-vague",
+    "prompt": "POST https://api.example.com/orders then summarize result",
+    "direction": "Make this workflow better somehow.",
+    "expectedProposalErrorCode": "CHEF_DIRECTION_UNSUPPORTED"
+  }
+]

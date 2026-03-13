@@ -40,6 +40,7 @@
     "poc:inspect": "node scripts/poc-inspect.mjs",
     "poc:pilot": "node scripts/poc-pilot.mjs",
     "poc:qualify:demo": "node --test test/integration/conformance/poc-demo-runbook-qualification.conformance.test.mjs",
+    "poc:qualify:intent-synthesis": "node --test test/integration/conformance/poc-intent-synthesis-qualification.conformance.test.mjs",
     "poc:qualify:pilot": "node --test test/integration/conformance/poc-pilot-01-qualification.conformance.test.mjs",
     "poc:qualify:resume": "node --test test/integration/conformance/poc-resume-cli-qualification.conformance.test.mjs",
     "poc:qualify:webhook": "node --test test/integration/conformance/poc-webhook-e2e-qualification.conformance.test.mjs",
