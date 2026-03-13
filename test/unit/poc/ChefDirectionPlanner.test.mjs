@@ -50,6 +50,24 @@ function sampleArtifact() {
   };
 }
 
+function sampleArtifactWithAmbiguousSummaryRole() {
+  const artifact = sampleArtifact();
+  return {
+    ...artifact,
+    nodes: [
+      ...artifact.nodes,
+      {
+        id: "openai-summary-2",
+        type: "action.openai",
+        config: {
+          model: "gpt-4o-mini",
+          prompt: "Summarize {{input.text}} in detail"
+        }
+      }
+    ]
+  };
+}
+
 test("planChefDirection is deterministic for same artifact and direction", () => {
   const artifact = sampleArtifact();
   const direction = "Please add a summary step after http-1.";
@@ -120,6 +138,30 @@ test("planChefDirection maps remove intent into remove_leaf_node mutation propos
   assert.equal(proposal.operation.nodeId, "openai-success-1");
 });
 
+test("planChefDirection maps role-based direction without node ids into add_openai_after proposal", () => {
+  const proposal = planChefDirection({
+    artifact: sampleArtifact(),
+    direction: "After first request step, add a summary step for the operator."
+  });
+
+  assert.equal(proposal.operationType, "add_openai_after");
+  assert.equal(proposal.operation.afterNodeId, "http-1");
+  assert.ok(Array.isArray(proposal.resolvedAnchors));
+  assert.ok(proposal.resolvedAnchors.some((entry) => entry.nodeId === "http-1"));
+});
+
+test("planChefDirection maps trigger/summary role phrases into connect_nodes proposal", () => {
+  const proposal = planChefDirection({
+    artifact: sampleArtifact(),
+    direction: "Connect trigger step to summary step."
+  });
+
+  assert.equal(proposal.operationType, "connect_nodes");
+  assert.equal(proposal.operation.fromNodeId, "trigger");
+  assert.equal(proposal.operation.toNodeId, "openai-success-1");
+  assert.ok(Array.isArray(proposal.resolvedAnchors));
+});
+
 test("planChefDirection fails closed for unsupported vague intent", () => {
   assert.throws(
     () => planChefDirection({
@@ -137,5 +179,15 @@ test("planChefDirection fails closed for ambiguous direction", () => {
       direction: "Add a summary after http-1 and also connect http-1 to openai-success-1 on failed."
     }),
     /ambiguous|single|direction/i
+  );
+});
+
+test("planChefDirection fails closed for ambiguous role resolution", () => {
+  assert.throws(
+    () => planChefDirection({
+      artifact: sampleArtifactWithAmbiguousSummaryRole(),
+      direction: "After summary step, add a summary step for the operator."
+    }),
+    /ambiguous|summary|role/i
   );
 });

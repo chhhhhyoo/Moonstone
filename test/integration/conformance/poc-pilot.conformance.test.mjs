@@ -418,3 +418,82 @@ test("poc:pilot supports add-http direction proposal with deterministic diff pre
     await rm(tempRoot, { recursive: true, force: true });
   }
 });
+
+test("poc:pilot supports role-based direction without explicit node ids", async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), "moonstone-poc-pilot-direction-role-loop-"));
+  try {
+    const outDir = path.join(tempRoot, "initial");
+    const proposalOutDir = path.join(tempRoot, "proposal");
+    const applyOutDir = path.join(tempRoot, "apply");
+    const journalDir = path.join(tempRoot, "journal");
+
+    const initialResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--prompt",
+      "POST https://api.example.com/orders then summarize result",
+      "--input",
+      "{\"text\":\"pilot-direction-role-initial\"}",
+      "--outdir",
+      outDir,
+      "--journal-dir",
+      journalDir,
+      "--run-id",
+      "pilot-direction-role-initial-001"
+    ]);
+    const initialPayload = parseJsonOutput(initialResult.stdout, "poc:pilot(initial-direction-role)");
+    const sourceBeforeRaw = await readFile(initialPayload.paths.artifactPath, "utf8");
+
+    const direction = "Connect trigger step to summary step.";
+    const proposalResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--artifact",
+      initialPayload.paths.artifactPath,
+      "--direction",
+      direction,
+      "--outdir",
+      proposalOutDir,
+      "--journal-dir",
+      journalDir
+    ]);
+    const proposalPayload = parseJsonOutput(proposalResult.stdout, "poc:pilot(direction-role-proposal)");
+    assert.equal(proposalPayload.ok, true);
+    assert.equal(proposalPayload.status, "proposal_only");
+    assert.equal(proposalPayload.proposal.operationType, "connect_nodes");
+    assert.ok(Array.isArray(proposalPayload.proposal.resolvedAnchors));
+    assert.ok(proposalPayload.proposal.resolvedAnchors.some((entry) => entry.nodeId === "trigger"));
+    assert.ok(proposalPayload.proposal.resolvedAnchors.some((entry) => entry.nodeId === "openai-success-1"));
+
+    const applyResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--artifact",
+      initialPayload.paths.artifactPath,
+      "--direction",
+      direction,
+      "--apply-direction",
+      "--input",
+      "{\"text\":\"pilot-direction-role-apply\"}",
+      "--outdir",
+      applyOutDir,
+      "--journal-dir",
+      journalDir,
+      "--run-id",
+      "pilot-direction-role-apply-001"
+    ]);
+    const applyPayload = parseJsonOutput(applyResult.stdout, "poc:pilot(direction-role-apply)");
+    assert.equal(applyPayload.ok, true);
+    assert.equal(applyPayload.status, "completed");
+    assert.equal(applyPayload.runId, "pilot-direction-role-apply-001");
+    assert.equal(applyPayload.proposal.operationType, "connect_nodes");
+
+    const sourceAfterRaw = await readFile(initialPayload.paths.artifactPath, "utf8");
+    assert.equal(sourceAfterRaw, sourceBeforeRaw, "role-based direction apply must not mutate source artifact file");
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+});

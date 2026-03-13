@@ -122,6 +122,36 @@ Fail-closed behavior:
 2. under-specified directions (missing required hints) are rejected,
 3. blocked graph-safety proposals report deterministic `blockedReasons` in preview.
 
+## Role-Based Direction Anchors (PF-POC-019)
+
+Node-ID-free direction paths are now supported through bounded role anchors:
+
+1. `first request step` / `latest request step`
+2. `summary step`
+3. `trigger step`
+
+Example (no explicit node IDs):
+
+```bash
+npm run poc:pilot -- \
+  --mode mock \
+  --artifact .moonstone/pilot/chef-initial/artifact.json \
+  --direction "Connect trigger step to summary step." \
+  --outdir .moonstone/pilot/chef-direction-role-proposal
+```
+
+Expected proposal details:
+
+1. `proposal.operationType` is deterministic (`connect_nodes` in this example).
+2. `proposal.resolvedAnchors` shows which concrete node IDs were selected.
+3. Proposal remains `status: proposal_only` until `--apply-direction` is supplied.
+
+Role resolution safety:
+
+1. If a role has multiple candidates and no disambiguator (`first`/`latest`), planner fails closed.
+2. Unknown role references fail closed.
+3. Role substitution is context-aware (`after`, `connect ... to ...`, `replace ... with`, `remove leaf ...`) to avoid rewriting operation descriptors accidentally.
+
 ## Direct-Apply Mutation Check (PF-POC-015)
 
 ```bash
