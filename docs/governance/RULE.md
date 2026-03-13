@@ -45,12 +45,25 @@ Each section must contain substantive content; empty shells are policy violation
 5. State residual risks and confidence limits explicitly.
 6. Link follow-up action IDs from `docs/strategy/FUTURE-ACTIONS.md` or declare `none`.
 
+## Plan Discipline (Mandatory)
+
+1. Every new implementation branch or materially new approach must have an explicit plan doc before coding begins.
+2. Plan docs must live under `docs/strategy/` (milestone plan such as `PF-POC-*.md` or dated build-plan doc).
+3. Execution must be plan-referenced: each material implementation step must map to a current plan item.
+4. Plan status must be updated continuously during execution (not batch-updated at the end).
+5. Plan update logs must include concrete evidence (commands, tests, or artifacts) so progress is auditable.
+6. After every merge, trackers must be refreshed together: milestone status, linked future action status, and linked risk status.
+7. Activating a next slice requires creating/updating the next plan doc in the same tracker refresh change set.
+
 ## Rejection Triggers
 
 1. Title does not match naming policy.
 2. PR body is missing required sections or has placeholder content.
 3. Branch/PR/commit identities do not align.
 4. Validation evidence is omitted or vague.
+5. A material branch/approach has no corresponding active plan doc under `docs/strategy/`.
+6. Implementation evidence does not reconcile against plan status updates.
+7. Post-merge tracker refresh does not update milestone + action + risk together.
 
 ## Change Control
 
