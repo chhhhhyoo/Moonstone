@@ -123,6 +123,7 @@
 - `notes/spec-impact/2026-03-13-pf-poc-008-demo-runbook-qualification.md`: 2026-03-13 PF-POC-008 Demo Runbook Qualification Impact
 - `notes/spec-impact/2026-03-13-pf-poc-009-webhook-e2e-runid.md`: 2026-03-13 PF-POC-009 Webhook E2E Run-ID Impact
 - `notes/spec-impact/2026-03-13-pf-poc-015-direct-apply-mutation.md`: 2026-03-13 PF-POC-015 Lead-Chef SSOT And Direct-Apply Mutation Impact
+- `notes/spec-impact/2026-03-13-pf-poc-016-pilot-feedback-loop.md`: 2026-03-13 PF-POC-016 Pilot Feedback Loop Impact
 
 ## Documentation Catalog
 

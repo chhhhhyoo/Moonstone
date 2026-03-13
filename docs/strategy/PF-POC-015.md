@@ -3,7 +3,7 @@
 **Milestone**: `PF-POC-015`
 **Execution Branch**: `codex/pf-runtime-029-direct-apply-mutation`
 **Owner**: `core`
-**Status**: `in_progress`
+**Status**: `done`
 **Last Updated**: `2026-03-13`
 
 ## Objective
@@ -62,3 +62,4 @@ This slice advances the lead-chef model in `VISION.md` by:
 | 2026-03-13 20:47 | Refactored mutation qualification for hermetic execution and updated pilot runbook/spec-impact artifacts with explicit mutation limits and operator flow. | `test/integration/conformance/poc-mutate-qualification.conformance.test.mjs`, `docs/workflows/PF-POC-PILOT-promptable-builder.md`, `notes/spec-impact/2026-03-13-pf-poc-015-direct-apply-mutation.md` |
 | 2026-03-13 20:53 | Completed strict regression gates and freshness checks for PF-POC-015 closure evidence. | `npm run verify:strict`, `npm run check:verification-fresh`, `npm run check:strategy`, `npm run check:spec` |
 | 2026-03-13 21:00 | Re-ran strict/freshness gates after final docs/log/learnings sync to keep closure evidence timestamp-fresh before PR handoff. | `npm run verify:strict`, `npm run check:verification-fresh` |
+| 2026-03-13 12:48 | Merged PF-RUNTIME-029 and closed milestone/action/risk tracker set (`PF-POC-015`, `ACT-020`, `POC-019`) before activating PF-POC-016. | `https://github.com/chhhhhyoo/Moonstone/pull/21`, `docs/strategy/MILESTONES.md`, `docs/strategy/FUTURE-ACTIONS.md`, `docs/strategy/2026-03-12-pf-poc-001-risk-register.md` |

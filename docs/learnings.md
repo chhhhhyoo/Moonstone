@@ -283,3 +283,8 @@
 
 - Mutation scenarios that rely on public internet URLs create flaky false negatives unrelated to runtime logic.
 - Routing all qualification HTTP traffic through local mock origins keeps conformance deterministic and makes failures actionable.
+
+## 2026-03-13: Iterative Pilot Loops Need Explicit Artifact Lineage
+
+- A feedback-driven rerun flow is hard to trust if it does not report which artifact was the source and which artifact was actually executed.
+- Emitting `sourceArtifactPath` + `effectiveArtifactPath` + mutation summary in CLI output makes chef-style review loops reproducible and auditable.

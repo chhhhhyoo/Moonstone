@@ -22,6 +22,34 @@ Expected result:
 3. `executedNodeIds` should reflect one branch path, not both.
 4. Output includes `generatedTools` and file paths for `tools.json` plus artifact/diagnostics/run/inspect/replay.
 
+## Lead-Chef Feedback Loop (PF-POC-016)
+
+Use this to iterate from an existing artifact with directional prompt feedback.
+
+```bash
+npm run poc:pilot -- \
+  --mode mock \
+  --prompt "POST https://api.example.com/orders then summarize result" \
+  --input '{"text":"chef-initial"}' \
+  --outdir .moonstone/pilot/chef-initial \
+  --run-id chef-initial-001
+
+npm run poc:pilot -- \
+  --mode mock \
+  --artifact .moonstone/pilot/chef-initial/artifact.json \
+  --feedback "add http after http-1 method GET url https://api.example.com/orders/summary on success" \
+  --input '{"text":"chef-feedback"}' \
+  --outdir .moonstone/pilot/chef-feedback \
+  --run-id chef-feedback-001
+```
+
+Expected result:
+
+1. Second run output includes `lineage.sourceArtifactPath`, `lineage.effectiveArtifactPath`, and `lineage.mutation`.
+2. `lineage.mutation.applied` is `true` and `operationType` matches the feedback mutation.
+3. Source artifact file remains unchanged; effective run artifact is written to a new `*.mutated.json` path.
+4. Inspect/replay evidence remains runnable for the feedback run.
+
 ## Direct-Apply Mutation Check (PF-POC-015)
 
 ```bash
