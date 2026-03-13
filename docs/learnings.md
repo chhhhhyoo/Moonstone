@@ -298,3 +298,8 @@
 
 - Keyword intent parsing can silently misclassify operations when tokens (for example `summary`) appear inside URLs rather than user intent text.
 - Stripping URLs before intent classification is a low-cost guardrail that keeps bounded direction mapping deterministic without adding LLM dependence.
+
+## 2026-03-13: Role Replacement Must Be Anchor-Context-Aware
+
+- Global phrase replacement for role aliases (`summary step`, `request step`) can corrupt operation descriptors such as \"add summary step\" and break valid intent mapping.
+- Restricting role substitution to structural anchor contexts (`after`, `connect ... to ...`, `replace ... with`, `remove leaf ...`) keeps node-id-free direction support safe and predictable.

@@ -1,10 +1,18 @@
 import { createHash } from "node:crypto";
 import { normalizeWorkflowArtifact, validateWorkflowArtifact } from "./WorkflowArtifact.mjs";
 import { planWorkflowMutation } from "./WorkflowMutationPlanner.mjs";
+import { resolveChefRoleAnchor } from "./ChefDirectionPlannerRoles.mjs";
 
 const EVENT_VALUES = new Set(["always", "success", "failed"]);
 const HTTP_METHOD_VALUES = new Set(["GET", "POST", "PUT", "DELETE", "PATCH"]);
 const SUMMARY_INTENT_PATTERN = /\b(summary|summarize|summarise)\b/i;
+const ROLE_REFERENCE_CAPTURE = [
+  "first\\s+(?:request|http)\\s+(?:step|node)",
+  "(?:latest|last)\\s+(?:request|http)\\s+(?:step|node)",
+  "(?:request|http)\\s+(?:step|node)",
+  "summary\\s+(?:step|node)",
+  "trigger\\s+(?:step|node)"
+].join("|");
 
 /**
  * @returns {never}
@@ -181,6 +189,9 @@ function parseAddOpenAISummaryDirection(direction) {
   if (!SUMMARY_INTENT_PATTERN.test(stripUrls(direction))) {
     return null;
   }
+  if (!/\b(add|after)\b/i.test(stripUrls(direction))) {
+    return null;
+  }
   const afterNodeId = extractAfterNodeId(direction);
   if (!afterNodeId) {
     fail(
@@ -198,6 +209,44 @@ function parseAddOpenAISummaryDirection(direction) {
   };
 }
 
+function resolveRoleAnchorsInDirection(artifact, direction) {
+  const resolvedAnchors = [];
+  let rewrittenDirection = String(direction);
+
+  const resolveReference = (matched) => {
+    const resolved = resolveChefRoleAnchor({
+      artifact,
+      roleReference: matched
+    });
+    resolvedAnchors.push({
+      roleReference: matched,
+      role: resolved.role,
+      selector: resolved.selector,
+      nodeId: resolved.nodeId
+    });
+    return resolved.nodeId;
+  };
+
+  const afterPattern = new RegExp(`\\bafter\\s+(${ROLE_REFERENCE_CAPTURE})\\b`, "gi");
+  rewrittenDirection = rewrittenDirection.replace(afterPattern, (_full, matched) => `after ${resolveReference(matched)}`);
+
+  const connectPattern = new RegExp(`\\bconnect\\s+(${ROLE_REFERENCE_CAPTURE})\\s+to\\s+(${ROLE_REFERENCE_CAPTURE})\\b`, "gi");
+  rewrittenDirection = rewrittenDirection.replace(connectPattern, (_full, fromMatched, toMatched) =>
+    `connect ${resolveReference(fromMatched)} to ${resolveReference(toMatched)}`
+  );
+
+  const replacePattern = new RegExp(`\\breplace\\s+(?:node\\s+)?(${ROLE_REFERENCE_CAPTURE})\\s+with\\b`, "gi");
+  rewrittenDirection = rewrittenDirection.replace(replacePattern, (_full, matched) => `replace node ${resolveReference(matched)} with`);
+
+  const removeLeafPattern = new RegExp(`\\bremove\\s+leaf\\s+node\\s+(${ROLE_REFERENCE_CAPTURE})\\b`, "gi");
+  rewrittenDirection = rewrittenDirection.replace(removeLeafPattern, (_full, matched) => `remove leaf node ${resolveReference(matched)}`);
+
+  return {
+    rewrittenDirection,
+    resolvedAnchors
+  };
+}
+
 /**
  * @param {{
  *   artifact: Record<string, unknown>,
@@ -209,6 +258,7 @@ export function planChefDirection({ artifact, direction }) {
   validateWorkflowArtifact(normalizedArtifact);
 
   const cleanDirection = normalizeDirection(direction);
+  const roleResolved = resolveRoleAnchorsInDirection(normalizedArtifact, cleanDirection);
   const parsers = [
     parseConnectDirection,
     parseRemoveLeafDirection,
@@ -217,7 +267,7 @@ export function planChefDirection({ artifact, direction }) {
     parseAddOpenAISummaryDirection
   ];
   const matches = parsers
-    .map((parser) => parser(cleanDirection))
+    .map((parser) => parser(roleResolved.rewrittenDirection))
     .filter((entry) => entry !== null);
 
   if (matches.length > 1) {
@@ -255,6 +305,7 @@ export function planChefDirection({ artifact, direction }) {
     direction: cleanDirection,
     operationType: mutationPlan.operationType,
     operation: mutationPlan.operation,
+    resolvedAnchors: roleResolved.resolvedAnchors,
     ambiguity: "none",
     confidence: selected.confidence,
     rationale: selected.rationale,

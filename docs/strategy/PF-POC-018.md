@@ -3,7 +3,7 @@
 **Milestone**: `PF-POC-018`
 **Execution Branch**: `codex/pf-runtime-032-poc-018-kickoff`
 **Owner**: `core`
-**Status**: `in_progress`
+**Status**: `done`
 **Last Updated**: `2026-03-13`
 
 ## Objective
@@ -96,3 +96,4 @@ This slice advances `VISION.md` outcomes by:
 | 2026-03-13 15:04 | Implemented GREEN operation pack + preview contract: planner now supports bounded add/replace/connect/remove intent mappings and pilot direction output includes deterministic proposal preview diff. | `src/core/poc/ChefDirectionPlanner.mjs`, `src/core/poc/ChefDirectionPlannerPreview.mjs`, `scripts/poc-pilot.mjs`, `node --test test/unit/poc/ChefDirectionPlanner.test.mjs`, `node --test test/unit/poc/ChefDirectionPlannerPreview.test.mjs`, `node --test test/integration/conformance/poc-pilot.conformance.test.mjs` |
 | 2026-03-13 15:12 | Completed REFACTOR sync for PF-POC-018: runbook operation-pack guidance, spec-impact record, and durable learning update captured. | `docs/workflows/PF-POC-PILOT-promptable-builder.md`, `notes/spec-impact/2026-03-13-pf-poc-018-intent-operation-pack-preview.md`, `docs/logs/2026-03-13.md`, `docs/learnings.md` |
 | 2026-03-13 15:21 | Completed strict regression + freshness gates after PF-POC-018 implementation and docs sync. | `npm run lint:fix`, `node --test test/unit/poc/ChefDirectionPlanner.test.mjs`, `node --test test/unit/poc/ChefDirectionPlannerPreview.test.mjs`, `node --test test/integration/conformance/poc-pilot.conformance.test.mjs`, `npm run verify:strict`, `npm run check:verification-fresh`, `npm run check:strategy`, `npm run check:spec` |
+| 2026-03-13 15:27 | Merged PF-RUNTIME-032 and closed tracker set (`PF-POC-018`, `ACT-023`, `POC-022`) before activating PF-POC-019. | `https://github.com/chhhhhyoo/Moonstone/pull/24`, `docs/strategy/MILESTONES.md`, `docs/strategy/FUTURE-ACTIONS.md`, `docs/strategy/2026-03-12-pf-poc-001-risk-register.md` |
