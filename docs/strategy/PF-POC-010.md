@@ -42,3 +42,4 @@ Close the operator recovery gap by adding a first-class CLI resume entrypoint an
 | timestamp_kst | update | evidence |
 |---|---|---|
 | 2026-03-13 11:52 | Initialized PF-POC-010 after PF-POC-009 merge closure to implement CLI resume qualification. | `docs/strategy/PF-POC-010.md`, `docs/strategy/MILESTONES.md`, `docs/strategy/FUTURE-ACTIONS.md` |
+| 2026-03-13 12:18 | Added pilot promptable-workflow command to gather product signal before PF-POC-010 resume implementation proceeds. | `scripts/poc-pilot.mjs`, `docs/workflows/PF-POC-PILOT-promptable-builder.md`, `test/integration/conformance/poc-pilot.conformance.test.mjs` |
