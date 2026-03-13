@@ -542,6 +542,21 @@ function splitDirectionClauses(direction) {
     .filter((entry) => entry.length > 0);
 }
 
+function validateDirectionPackClauses({ clauses, maxClauses }) {
+  if (clauses.length < 2) {
+    fail(
+      "CHEF_DIRECTION_PACK_REQUIRED",
+      "Direction pack mode requires at least two clauses separated by 'then'."
+    );
+  }
+  if (clauses.length > maxClauses) {
+    fail(
+      "CHEF_DIRECTION_PACK_TOO_LARGE",
+      `Direction pack supports at most ${maxClauses} clauses in v1.`
+    );
+  }
+}
+
 function buildPreviewPlanFromProposal({ artifact, proposal, clauseDirection, clauseIndex }) {
   return {
     planId: `pack-preview.${proposal.proposalId}.${clauseIndex}`,
@@ -552,6 +567,57 @@ function buildPreviewPlanFromProposal({ artifact, proposal, clauseDirection, cla
     diagnostics: {
       plannerVersion: proposal.diagnostics?.plannerVersion ?? "0.1.0",
       mode: "chef-direction-pack-preview",
+      warnings: []
+    }
+  };
+}
+
+function applyPreviewProposal({
+  artifact,
+  proposal,
+  clauseDirection,
+  clauseIndex
+}) {
+  const previewPlan = buildPreviewPlanFromProposal({
+    artifact,
+    proposal,
+    clauseDirection,
+    clauseIndex
+  });
+  const previewApply = applyWorkflowMutation({
+    artifact,
+    plan: previewPlan
+  });
+  return previewApply.mutatedArtifact;
+}
+
+function buildDirectionPackProposal({
+  artifactId,
+  cleanDirection,
+  clauses,
+  proposals
+}) {
+  const confidenceValues = proposals.map((entry) => Number(entry.confidence ?? 0));
+  const confidence = confidenceValues.length > 0
+    ? Math.min(...confidenceValues)
+    : 0;
+
+  return {
+    packId: buildDirectionPackId({
+      artifactId,
+      clauses,
+      proposals
+    }),
+    sourceArtifactId: artifactId,
+    direction: cleanDirection,
+    clauseCount: clauses.length,
+    clauses,
+    proposals,
+    ambiguity: "none",
+    confidence,
+    diagnostics: {
+      plannerVersion: "0.1.0",
+      mode: "bounded-operation-direction-pack-v1",
       warnings: []
     }
   };
@@ -570,18 +636,7 @@ export function planChefDirectionPack({ artifact, direction, maxClauses = 3 }) {
 
   const cleanDirection = normalizeDirection(direction);
   const clauses = splitDirectionClauses(cleanDirection);
-  if (clauses.length < 2) {
-    fail(
-      "CHEF_DIRECTION_PACK_REQUIRED",
-      "Direction pack mode requires at least two clauses separated by 'then'."
-    );
-  }
-  if (clauses.length > maxClauses) {
-    fail(
-      "CHEF_DIRECTION_PACK_TOO_LARGE",
-      `Direction pack supports at most ${maxClauses} clauses in v1.`
-    );
-  }
+  validateDirectionPackClauses({ clauses, maxClauses });
 
   let workingArtifact = normalizedArtifact;
   const proposals = [];
@@ -606,45 +661,147 @@ export function planChefDirectionPack({ artifact, direction, maxClauses = 3 }) {
       clauseDirection
     };
     proposals.push(clauseProposal);
-
-    const previewPlan = buildPreviewPlanFromProposal({
+    workingArtifact = applyPreviewProposal({
       artifact: workingArtifact,
       proposal: clauseProposal,
       clauseDirection,
       clauseIndex: index + 1
     });
-    const previewApply = applyWorkflowMutation({
-      artifact: workingArtifact,
-      plan: previewPlan
-    });
-    workingArtifact = previewApply.mutatedArtifact;
   }
-
-  const confidenceValues = proposals.map((entry) => Number(entry.confidence ?? 0));
-  const confidence = confidenceValues.length > 0
-    ? Math.min(...confidenceValues)
-    : 0;
 
   return {
     status: "resolved",
-    proposalPack: {
-      packId: buildDirectionPackId({
-        artifactId: normalizedArtifact.artifactId,
-        clauses,
-        proposals
-      }),
-      sourceArtifactId: normalizedArtifact.artifactId,
-      direction: cleanDirection,
-      clauseCount: clauses.length,
+    proposalPack: buildDirectionPackProposal({
+      artifactId: normalizedArtifact.artifactId,
+      cleanDirection,
       clauses,
-      proposals,
-      ambiguity: "none",
-      confidence,
-      diagnostics: {
-        plannerVersion: "0.1.0",
-        mode: "bounded-operation-direction-pack-v1",
-        warnings: []
-      }
+      proposals
+    })
+  };
+}
+
+/**
+ * @param {{
+ *   artifact: Record<string, unknown>,
+ *   direction: string,
+ *   maxClauses?: number
+ * }} input
+ */
+export function planChefDirectionPackWithChoices({ artifact, direction, maxClauses = 3 }) {
+  const normalizedArtifact = normalizeWorkflowArtifact(artifact);
+  validateWorkflowArtifact(normalizedArtifact);
+
+  const cleanDirection = normalizeDirection(direction);
+  const clauses = splitDirectionClauses(cleanDirection);
+  validateDirectionPackClauses({ clauses, maxClauses });
+
+  let prefixArtifact = normalizedArtifact;
+  const prefixProposals = [];
+  let ambiguousClauseIndex = -1;
+  let ambiguousClauseDirection = "";
+  let ambiguousClauseCandidates = [];
+
+  for (let index = 0; index < clauses.length; index += 1) {
+    const clauseDirection = clauses[index];
+    const planned = planChefDirectionWithChoices({
+      artifact: prefixArtifact,
+      direction: clauseDirection
+    });
+
+    if (planned.status === "resolved") {
+      const clauseProposal = {
+        ...planned.proposal,
+        clauseIndex: index + 1,
+        clauseDirection
+      };
+      prefixProposals.push(clauseProposal);
+      prefixArtifact = applyPreviewProposal({
+        artifact: prefixArtifact,
+        proposal: clauseProposal,
+        clauseDirection,
+        clauseIndex: index + 1
+      });
+      continue;
     }
+
+    if (ambiguousClauseIndex >= 0) {
+      fail(
+        "CHEF_DIRECTION_PACK_MULTI_AMBIGUOUS",
+        "Direction pack contains multiple ambiguous clauses; v1 supports exactly one ambiguous clause."
+      );
+    }
+
+    ambiguousClauseIndex = index;
+    ambiguousClauseDirection = clauseDirection;
+    ambiguousClauseCandidates = planned.proposalCandidates.map((candidate) => ({
+      ...candidate,
+      clauseIndex: index + 1,
+      clauseDirection
+    }));
+    break;
+  }
+
+  if (ambiguousClauseIndex < 0) {
+    return {
+      status: "resolved",
+      proposalPack: buildDirectionPackProposal({
+        artifactId: normalizedArtifact.artifactId,
+        cleanDirection,
+        clauses,
+        proposals: prefixProposals
+      })
+    };
+  }
+
+  const proposalPackCandidates = ambiguousClauseCandidates.map((ambiguousCandidate) => {
+    let workingArtifact = applyPreviewProposal({
+      artifact: prefixArtifact,
+      proposal: ambiguousCandidate,
+      clauseDirection: ambiguousClauseDirection,
+      clauseIndex: ambiguousClauseIndex + 1
+    });
+    const proposals = [
+      ...prefixProposals,
+      ambiguousCandidate
+    ];
+
+    for (let tailIndex = ambiguousClauseIndex + 1; tailIndex < clauses.length; tailIndex += 1) {
+      const tailDirection = clauses[tailIndex];
+      const plannedTail = planChefDirectionWithChoices({
+        artifact: workingArtifact,
+        direction: tailDirection
+      });
+      if (plannedTail.status !== "resolved") {
+        fail(
+          "CHEF_DIRECTION_PACK_MULTI_AMBIGUOUS",
+          `Direction pack clause ${tailIndex + 1} is also ambiguous; v1 supports exactly one ambiguous clause.`
+        );
+      }
+
+      const tailProposal = {
+        ...plannedTail.proposal,
+        clauseIndex: tailIndex + 1,
+        clauseDirection: tailDirection
+      };
+      proposals.push(tailProposal);
+      workingArtifact = applyPreviewProposal({
+        artifact: workingArtifact,
+        proposal: tailProposal,
+        clauseDirection: tailDirection,
+        clauseIndex: tailIndex + 1
+      });
+    }
+
+    return buildDirectionPackProposal({
+      artifactId: normalizedArtifact.artifactId,
+      cleanDirection,
+      clauses,
+      proposals
+    });
+  });
+
+  return {
+    status: "choice_required",
+    proposalPackCandidates
   };
 }

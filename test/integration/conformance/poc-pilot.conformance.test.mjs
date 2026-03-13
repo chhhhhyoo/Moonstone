@@ -740,3 +740,167 @@ test("poc:pilot supports multi-clause direction pack proposal and atomic apply",
     await rm(tempRoot, { recursive: true, force: true });
   }
 });
+
+test("poc:pilot returns proposal-pack-choice-required for single ambiguous clause and enforces selection on apply", async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), "moonstone-poc-pilot-direction-pack-choice-"));
+  try {
+    const initialOutDir = path.join(tempRoot, "initial");
+    const feedbackOutDir = path.join(tempRoot, "feedback");
+    const proposalOutDir = path.join(tempRoot, "proposal-pack-choice");
+    const applyOutDir = path.join(tempRoot, "apply-pack-choice");
+    const journalDir = path.join(tempRoot, "journal");
+
+    const initialResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--prompt",
+      "POST https://api.example.com/orders then summarize result",
+      "--input",
+      "{\"text\":\"pilot-direction-pack-choice-initial\"}",
+      "--outdir",
+      initialOutDir,
+      "--journal-dir",
+      journalDir,
+      "--run-id",
+      "pilot-direction-pack-choice-initial-001"
+    ]);
+    const initialPayload = parseJsonOutput(initialResult.stdout, "poc:pilot(initial-direction-pack-choice)");
+    const sourceBeforeRaw = await readFile(initialPayload.paths.artifactPath, "utf8");
+
+    const feedbackResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--artifact",
+      initialPayload.paths.artifactPath,
+      "--feedback",
+      "add openai after http-1 model gpt-4o-mini prompt \"Summarize result for operator.\" on success",
+      "--input",
+      "{\"text\":\"pilot-direction-pack-choice-feedback\"}",
+      "--outdir",
+      feedbackOutDir,
+      "--journal-dir",
+      journalDir,
+      "--run-id",
+      "pilot-direction-pack-choice-feedback-001"
+    ]);
+    const feedbackPayload = parseJsonOutput(feedbackResult.stdout, "poc:pilot(feedback-direction-pack-choice)");
+    const ambiguousArtifactPath = feedbackPayload.lineage.effectiveArtifactPath;
+    await expectFile(ambiguousArtifactPath);
+
+    const directionPack = [
+      "After summary step, add a summary step for the operator.",
+      "then connect trigger to http-1 on always."
+    ].join(" ");
+
+    const proposalResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--artifact",
+      ambiguousArtifactPath,
+      "--direction",
+      directionPack,
+      "--outdir",
+      proposalOutDir,
+      "--journal-dir",
+      journalDir
+    ]);
+    const proposalPayload = parseJsonOutput(proposalResult.stdout, "poc:pilot(direction-pack-choice-proposal)");
+    assert.equal(proposalPayload.ok, true);
+    assert.equal(proposalPayload.status, "proposal_pack_choice_required");
+    assert.equal(proposalPayload.runId, null);
+    assert.equal(proposalPayload.proposalPack, null);
+    assert.ok(Array.isArray(proposalPayload.proposalPackCandidates));
+    assert.equal(proposalPayload.proposalPackCandidates.length, 2);
+    assert.ok(
+      proposalPayload.proposalPackCandidates.every((candidate) => typeof candidate.packId === "string" && candidate.packId.length > 0)
+    );
+
+    const candidateTargets = proposalPayload.proposalPackCandidates.map((candidate) =>
+      candidate.proposals[0].operation.afterNodeId
+    );
+    assert.deepEqual(candidateTargets, [...candidateTargets].sort());
+
+    await assert.rejects(
+      () => runNodeScript([
+        "scripts/poc-pilot.mjs",
+        "--mode",
+        "mock",
+        "--artifact",
+        ambiguousArtifactPath,
+        "--direction",
+        directionPack,
+        "--apply-direction",
+        "--input",
+        "{\"text\":\"pilot-direction-pack-choice-apply-missing-id\"}",
+        "--outdir",
+        applyOutDir,
+        "--journal-dir",
+        journalDir,
+        "--run-id",
+        "pilot-direction-pack-choice-apply-missing-id-001"
+      ]),
+      /CHEF_DIRECTION_PACK_PROPOSAL_ID_REQUIRED/i
+    );
+
+    await assert.rejects(
+      () => runNodeScript([
+        "scripts/poc-pilot.mjs",
+        "--mode",
+        "mock",
+        "--artifact",
+        ambiguousArtifactPath,
+        "--direction",
+        directionPack,
+        "--apply-direction",
+        "--proposal-id",
+        "pack.invalid",
+        "--input",
+        "{\"text\":\"pilot-direction-pack-choice-apply-unknown-id\"}",
+        "--outdir",
+        applyOutDir,
+        "--journal-dir",
+        journalDir,
+        "--run-id",
+        "pilot-direction-pack-choice-apply-unknown-id-001"
+      ]),
+      /CHEF_DIRECTION_PACK_PROPOSAL_ID_UNKNOWN/i
+    );
+
+    const selectedPackId = proposalPayload.proposalPackCandidates[0].packId;
+    const applyResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--artifact",
+      ambiguousArtifactPath,
+      "--direction",
+      directionPack,
+      "--apply-direction",
+      "--proposal-id",
+      selectedPackId,
+      "--input",
+      "{\"text\":\"pilot-direction-pack-choice-apply\"}",
+      "--outdir",
+      applyOutDir,
+      "--journal-dir",
+      journalDir,
+      "--run-id",
+      "pilot-direction-pack-choice-apply-001"
+    ]);
+    const applyPayload = parseJsonOutput(applyResult.stdout, "poc:pilot(direction-pack-choice-apply)");
+    assert.equal(applyPayload.ok, true);
+    assert.equal(applyPayload.status, "completed");
+    assert.equal(applyPayload.runId, "pilot-direction-pack-choice-apply-001");
+    assert.ok(applyPayload.proposalPack);
+    assert.equal(applyPayload.proposalPack.packId, selectedPackId);
+    assert.equal(applyPayload.proposalPack.applied, true);
+
+    const sourceAfterRaw = await readFile(initialPayload.paths.artifactPath, "utf8");
+    assert.equal(sourceAfterRaw, sourceBeforeRaw, "direction-pack-choice apply must not mutate source artifact file");
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+});

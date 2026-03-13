@@ -31,7 +31,8 @@
 | POC-025 | Pilot-01 confidence can become demo theater if scenario coverage stays narrow and does not enforce the lead-chef acceptance contract across proposal/apply/run/replay paths | medium | critical | Add fail-closed Pilot-01 scenario corpus with qualification criteria and command/receipt continuity assertions under checkpoint-gated execution | core | done |
 | POC-026 | Proposal-choice determinism can regress across repeated runs (candidate ordering/proposal IDs/previews), undermining reproducibility and trust | medium | high | Add deterministic rerun assertions for role-ambiguity proposal-choice semantics in unit + conformance suites | core | done |
 | POC-027 | Operator actionability can drift if failure codes are not mapped to clear runbook handling, causing triage friction and misuse of direction/apply contracts | medium | medium | Normalize failure-code map in pilot runbook and enforce key error assertions in qualification scenarios | core | done |
-| POC-028 | Lead-chef direction remains low-throughput if every intent requires single-operation micro-prompts, causing orchestration drift and poor n8n-style composition feel | medium | high | Add bounded multi-step direction-pack planning/apply (`then` chain), deterministic ordering, and atomic fail-closed apply semantics with strict qualification evidence | core | in_progress |
+| POC-028 | Lead-chef direction remains low-throughput if every intent requires single-operation micro-prompts, causing orchestration drift and poor n8n-style composition feel | medium | high | Add bounded multi-step direction-pack planning/apply (`then` chain), deterministic ordering, and atomic fail-closed apply semantics with strict qualification evidence | core | done |
+| POC-029 | Direction-pack mode can regress into hard-fail behavior for ambiguous clauses, forcing low-level rewrite cycles and undermining composed chef-direction flow | medium | high | Add deterministic pack-candidate generation for exactly one ambiguous clause and require explicit candidate selection before apply | core | in_progress |
 
 ## Trigger Conditions
 
@@ -61,6 +62,7 @@
 24. Candidate-selection flows can become non-reproducible if proposal ordering/IDs drift across equivalent repeated runs.
 25. Error-code outputs can remain technically correct but operationally weak when runbook mapping is incomplete or stale.
 26. Multi-clause direction apply can corrupt artifact lineage if operations are partially applied before a later clause fails.
+27. Ambiguous clauses inside multi-step direction packs can collapse usability if planner has no bounded candidate-choice path.
 
 ## Exit Criteria For Risk Closure
 
@@ -92,3 +94,4 @@
 26. POC-026: closed when repeated equivalent runs prove deterministic proposal-choice ordering, IDs, previews, and mutation summaries under automated assertions.
 27. POC-027: closed when key failure codes are enforced in tests and mapped to explicit operator actions in runbook documentation.
 28. POC-028: closed when bounded multi-clause direction packs are proposed/applied deterministically with atomic all-or-none mutation semantics and strict qualification evidence.
+29. POC-029: closed when exactly one ambiguous clause in a direction pack yields deterministic pack candidates with explicit selection-before-apply semantics and strict qualification evidence.
