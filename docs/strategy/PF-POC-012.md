@@ -3,7 +3,7 @@
 **Milestone**: `PF-POC-012`
 **Execution Branch**: `codex/pf-runtime-026-multi-tool-prompt-pilot`
 **Owner**: `core`
-**Status**: `in_progress`
+**Status**: `done`
 **Last Updated**: `2026-03-13`
 
 ## Objective
@@ -50,3 +50,4 @@ Raise promptable tool creation from single-template behavior to deterministic mu
 | 2026-03-13 15:27 | Updated pilot operator guide to document multi-tool prompt-chain expectations and current parser constraints. | `docs/workflows/PF-POC-PILOT-promptable-builder.md` |
 | 2026-03-13 15:31 | Completed strict regression and freshness evidence with multi-tool synthesis tests included in canonical conformance route. | `npm run verify:strict`, `npm run check:verification-fresh` |
 | 2026-03-13 15:36 | Opened PF-RUNTIME-026 implementation PR for multi-tool prompt synthesis slice with required governance template and validation evidence. | `https://github.com/chhhhhyoo/Moonstone/pull/18` |
+| 2026-03-13 15:45 | Merged PF-RUNTIME-026 and closed PF-POC-012 action/risk scope (`ACT-017`, `POC-016`) with exit criteria satisfied. | `https://github.com/chhhhhyoo/Moonstone/pull/18`, `docs/strategy/MILESTONES.md`, `docs/strategy/FUTURE-ACTIONS.md`, `docs/strategy/2026-03-12-pf-poc-001-risk-register.md` |

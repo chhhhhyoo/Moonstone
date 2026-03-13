@@ -51,13 +51,30 @@ function buildScope(state, input) {
   };
 }
 
+function renderPayloadValue(value, scope) {
+  if (typeof value === "string") {
+    return renderTemplate(value, scope);
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => renderPayloadValue(item, scope));
+  }
+  if (value && typeof value === "object") {
+    const out = {};
+    for (const [key, nested] of Object.entries(value)) {
+      out[key] = renderPayloadValue(nested, scope);
+    }
+    return out;
+  }
+  return value;
+}
+
 function resolveNodePayload(node, scope) {
   if (node.type === "action.http") {
     return {
       url: renderTemplate(String(node.config.url ?? ""), scope),
       method: String(node.config.method ?? "GET").toUpperCase(),
-      headers: safeJson(node.config.headers ?? {}),
-      body: safeJson(node.config.body)
+      headers: renderPayloadValue(node.config.headers ?? {}, scope),
+      body: renderPayloadValue(node.config.body, scope)
     };
   }
 

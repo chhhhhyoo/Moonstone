@@ -376,25 +376,37 @@ export function compilePrompt({
   const branchMode = inferBranchMode({ inputExistsPath, inputComparisonCondition });
 
   /** @type {WorkflowNodeDraft[]} */
-  const nodes = resolvedHttpCalls.map((call, index) => ({
-    id: `http-${index + 1}`,
-    type: "action.http",
-    config: {
-      url: call.url,
-      method: call.method,
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: {
-        prompt: "{{input.text}}"
+  const nodes = resolvedHttpCalls.map((call, index) => {
+    const previousNodeId = index > 0 ? `http-${index}` : null;
+    const body = previousNodeId
+      ? {
+        prompt: "{{input.text}}",
+        upstreamStatus: `{{nodeResults.${previousNodeId}.result.status}}`,
+        upstreamSource: `{{nodeResults.${previousNodeId}.result.body.source}}`,
+        upstreamNodeId: previousNodeId
       }
-    },
-    retry: {
-      maxAttempts: 2,
-      backoffMs: 200,
-      maxBackoffMs: 1_000
-    }
-  }));
+      : {
+        prompt: "{{input.text}}"
+      };
+
+    return {
+      id: `http-${index + 1}`,
+      type: "action.http",
+      config: {
+        url: call.url,
+        method: call.method,
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body
+      },
+      retry: {
+        maxAttempts: 2,
+        backoffMs: 200,
+        maxBackoffMs: 1_000
+      }
+    };
+  });
 
   /** @type {WorkflowEdgeDraft[]} */
   const edges = /** @type {WorkflowEdgeDraft[]} */ ([

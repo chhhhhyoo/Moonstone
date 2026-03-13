@@ -190,6 +190,12 @@ test("compilePrompt emits ordered multi-http chain when prompt includes multiple
   assert.equal(artifact.nodes[0].config.method, "POST");
   assert.equal(artifact.nodes[1].config.url, "https://api.example.com/orders/summary");
   assert.equal(artifact.nodes[1].config.method, "GET");
+  assert.deepEqual(artifact.nodes[1].config.body, {
+    prompt: "{{input.text}}",
+    upstreamStatus: "{{nodeResults.http-1.result.status}}",
+    upstreamSource: "{{nodeResults.http-1.result.body.source}}",
+    upstreamNodeId: "http-1"
+  });
 
   const edgeTrigger = artifact.edges.find((edge) => edge.from === "trigger" && edge.to === "http-1");
   const edgeChain = artifact.edges.find((edge) => edge.from === "http-1" && edge.to === "http-2" && edge.on === "success");

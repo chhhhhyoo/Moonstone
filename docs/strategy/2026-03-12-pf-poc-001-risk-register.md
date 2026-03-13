@@ -19,7 +19,8 @@
 | POC-013 | Webhook ingress can silently break deterministic replay triage when run-id override handling is undefined or untested end-to-end | medium | high | Add webhook E2E qualification matrix with header-based run-id override and replay/inspect continuity assertions | core | done |
 | POC-014 | Interruption recovery can remain operationally brittle when `resume` is runtime-internal only and lacks CLI/operator qualification proof | medium | high | Add first-class `poc:resume` command and crash-recovery qualification matrix tied to strict verification evidence | core | done |
 | POC-015 | Prompt-based pilot can appear “agentic” while still hiding generated tool intent, making correctness and reproducibility hard to review | medium | high | Emit deterministic tool-blueprint output from compiler/pilot and qualify with CLI-level conformance gates | core | done |
-| POC-016 | Promptable builder can still be template theater if prompts with multiple ordered tool calls collapse into one fixed HTTP action | medium | high | Add deterministic multi-tool prompt synthesis path, expose ordered generated tools, and qualify compile/run behavior under strict conformance gates | core | in_progress |
+| POC-016 | Promptable builder can still be template theater if prompts with multiple ordered tool calls collapse into one fixed HTTP action | medium | high | Add deterministic multi-tool prompt synthesis path, expose ordered generated tools, and qualify compile/run behavior under strict conformance gates | core | done |
+| POC-017 | Multi-step prompt chains can still be operationally weak if downstream tool calls do not consume upstream outputs deterministically | medium | high | Introduce deterministic upstream-output propagation in synthesized tool chains and enforce with runtime conformance evidence | core | in_progress |
 
 ## Trigger Conditions
 
@@ -37,6 +38,7 @@
 12. Interrupted runs require ad hoc scripts instead of a canonical CLI resume path, increasing recovery variance.
 13. Pilot users cannot inspect what tools were generated from prompt intent, causing product-fit feedback to be noisy and non-actionable.
 14. Prompts that describe multiple tool calls still compile to single-step workflows, creating false confidence about promptable tool creation capability.
+15. Synthesized multi-tool chains execute in order but may still ignore prior-step outputs, undermining practical agentic value.
 
 ## Exit Criteria For Risk Closure
 
@@ -56,3 +58,4 @@
 14. POC-014: closed when `poc:resume` is operator-accessible and crash-recovery qualification proves deterministic resume behavior under strict verification.
 15. POC-015: closed when prompt-derived tool blueprints are emitted deterministically and qualified in pilot conformance plus strict verification.
 16. POC-016: closed when multi-tool prompt intents compile to deterministic sequential tool chains and execute with strict qualification evidence.
+17. POC-017: closed when synthesized downstream tool commands consume upstream outputs deterministically and qualification evidence is green under strict verification.
