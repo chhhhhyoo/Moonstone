@@ -238,3 +238,8 @@
 
 - Marking only the milestone as done leaves governance drift if linked action/risk IDs remain in-progress.
 - Every merge closure refresh should update milestone, future action, and risk register together before activating the next slice.
+
+## 2026-03-13: Product Signal Needs A One-Command Pilot Lane
+
+- Teams lose confidence when every change is another gate but there is no fast end-to-end “does this feel right?” workflow.
+- A pilot command that compiles, runs, inspects, and replays in one flow exposes product gaps much faster than documentation reviews.

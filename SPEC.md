@@ -63,6 +63,7 @@ See [docs/governance/verification-tier-policy.md](docs/governance/verification-t
 - `npm run poc:serve -- --artifact <path> [--run-id-header <name>]`
 - `npm run poc:replay -- --run-id <id>`
 - `npm run poc:inspect -- --run-id <id>`
+- `npm run poc:pilot -- --prompt "..." [--mode mock|live] [--input <path|json>]`
 - `npm run check:type`
 - `npm run check:lint`
 - `npm run check:contracts`
