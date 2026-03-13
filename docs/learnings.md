@@ -293,3 +293,8 @@
 
 - Letting natural-language direction auto-apply graph edits collapses review and execution into one opaque step, which is risky even in a CLI-first POC.
 - A proposal-only default with explicit `--apply-direction` keeps lead-chef control intact while preserving deterministic inspect/replay evidence.
+
+## 2026-03-13: Direction Planner Heuristics Need URL-Aware Intent Parsing
+
+- Keyword intent parsing can silently misclassify operations when tokens (for example `summary`) appear inside URLs rather than user intent text.
+- Stripping URLs before intent classification is a low-cost guardrail that keeps bounded direction mapping deterministic without adding LLM dependence.

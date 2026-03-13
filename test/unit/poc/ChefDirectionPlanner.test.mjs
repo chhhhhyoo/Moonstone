@@ -73,6 +73,53 @@ test("planChefDirection maps summary intent into add_openai_after mutation propo
   assert.ok(typeof proposal.rationale === "string" && proposal.rationale.length > 0);
 });
 
+test("planChefDirection maps http-step intent into add_http_after mutation proposal", () => {
+  const proposal = planChefDirection({
+    artifact: sampleArtifact(),
+    direction: "After http-1, add an API check step using GET https://api.example.com/orders/summary."
+  });
+
+  assert.equal(proposal.operationType, "add_http_after");
+  assert.equal(proposal.operation.afterNodeId, "http-1");
+  assert.equal(proposal.operation.method, "GET");
+  assert.equal(proposal.operation.url, "https://api.example.com/orders/summary");
+});
+
+test("planChefDirection maps replace intent into replace_node_tool mutation proposal", () => {
+  const proposal = planChefDirection({
+    artifact: sampleArtifact(),
+    direction: "Replace node openai-success-1 with HTTP POST https://api.example.com/notify."
+  });
+
+  assert.equal(proposal.operationType, "replace_node_tool");
+  assert.equal(proposal.operation.nodeId, "openai-success-1");
+  assert.equal(proposal.operation.targetType, "action.http");
+  assert.equal(proposal.operation.config.method, "POST");
+  assert.equal(proposal.operation.config.url, "https://api.example.com/notify");
+});
+
+test("planChefDirection maps connect intent into connect_nodes mutation proposal", () => {
+  const proposal = planChefDirection({
+    artifact: sampleArtifact(),
+    direction: "Connect http-1 to openai-success-1 on failed."
+  });
+
+  assert.equal(proposal.operationType, "connect_nodes");
+  assert.equal(proposal.operation.fromNodeId, "http-1");
+  assert.equal(proposal.operation.toNodeId, "openai-success-1");
+  assert.equal(proposal.operation.event, "failed");
+});
+
+test("planChefDirection maps remove intent into remove_leaf_node mutation proposal", () => {
+  const proposal = planChefDirection({
+    artifact: sampleArtifact(),
+    direction: "Remove leaf node openai-success-1."
+  });
+
+  assert.equal(proposal.operationType, "remove_leaf_node");
+  assert.equal(proposal.operation.nodeId, "openai-success-1");
+});
+
 test("planChefDirection fails closed for unsupported vague intent", () => {
   assert.throws(
     () => planChefDirection({
