@@ -258,3 +258,8 @@
 
 - Showing a generated tool list is not enough if multi-step prompts still collapse to one fixed action node.
 - Deterministic extraction of ordered HTTP calls from prompt text is a practical bridge between rigid templates and fully open-ended tool synthesis.
+
+## 2026-03-13: Command Envelopes Should Carry Resolved Payloads, Not Templates
+
+- If command payloads retain unresolved templates, inspect timelines under-report actual runtime behavior and hide dataflow correctness issues.
+- Resolving nested payload templates before command emission creates auditable, deterministic operation evidence aligned with execution reality.

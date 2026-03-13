@@ -50,6 +50,10 @@ Expected result:
 1. `executedNodeIds` includes ordered chain nodes (`http-1`, `http-2`, `openai-success-1`).
 2. `generatedTools` includes two HTTP tool entries (`http-1`, `http-2`) before summary tool output.
 3. Compiled artifact contains sequential success edges (`trigger -> http-1 -> http-2 -> openai-success-1`).
+4. Inspection timeline `command_emitted` for `http-2` contains upstream-derived payload fields:
+   - `upstreamStatus` (from `http-1` result)
+   - `upstreamSource` (from `http-1` result body source)
+   - `upstreamNodeId` (`http-1`)
 
 ## Failure Branch Check
 
@@ -91,5 +95,6 @@ npm run poc:pilot -- \
 
 1. Arbitrary tool creation from free-form prompt (tool catalog is still fixed to HTTP/OpenAI).
 2. Full natural-language intent coverage for complex multi-step tool flows (parser currently expects explicit URL tokens and ordered phrasing).
-3. Advanced graph authoring (parallelism, loops, human-wait).
-4. UI-level authoring quality comparable to mature no-code products.
+3. Rich data transformations between steps beyond deterministic upstream field projection.
+4. Advanced graph authoring (parallelism, loops, human-wait).
+5. UI-level authoring quality comparable to mature no-code products.

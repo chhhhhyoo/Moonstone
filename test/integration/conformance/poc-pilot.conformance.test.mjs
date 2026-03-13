@@ -99,6 +99,18 @@ test("poc:pilot compiles and runs ordered multi-tool prompt in mock mode", async
 
     const artifact = JSON.parse(await readFile(payload.paths.artifactPath, "utf8"));
     assert.deepEqual(artifact.nodes.map((node) => node.id), ["http-1", "http-2", "openai-success-1"]);
+
+    const inspection = JSON.parse(await readFile(payload.paths.inspectionPath, "utf8"));
+    const http2CommandEvent = inspection.timeline.find((event) =>
+      event.eventType === "command_emitted" && event.command?.nodeId === "http-2"
+    );
+    assert.ok(http2CommandEvent);
+    assert.deepEqual(http2CommandEvent.command.payload.body, {
+      prompt: "pilot-multi-tool",
+      upstreamStatus: "200",
+      upstreamSource: "mock-http",
+      upstreamNodeId: "http-1"
+    });
   } finally {
     await rm(tempRoot, { recursive: true, force: true });
   }
