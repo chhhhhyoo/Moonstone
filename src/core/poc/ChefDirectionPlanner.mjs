@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { normalizeWorkflowArtifact, validateWorkflowArtifact } from "./WorkflowArtifact.mjs";
 import { planWorkflowMutation } from "./WorkflowMutationPlanner.mjs";
-import { resolveChefRoleAnchor } from "./ChefDirectionPlannerRoles.mjs";
+import { listChefRoleCandidates } from "./ChefDirectionPlannerRoles.mjs";
 
 const EVENT_VALUES = new Set(["always", "success", "failed"]);
 const HTTP_METHOD_VALUES = new Set(["GET", "POST", "PUT", "DELETE", "PATCH"]);
@@ -209,22 +209,141 @@ function parseAddOpenAISummaryDirection(direction) {
   };
 }
 
-function resolveRoleAnchorsInDirection(artifact, direction) {
+function planSingleMutationForDirection(artifact, rewrittenDirection) {
+  const parsers = [
+    parseConnectDirection,
+    parseRemoveLeafDirection,
+    parseReplaceDirection,
+    parseAddHttpDirection,
+    parseAddOpenAISummaryDirection
+  ];
+  const matches = parsers
+    .map((parser) => parser(rewrittenDirection))
+    .filter((entry) => entry !== null);
+
+  if (matches.length > 1) {
+    fail(
+      "CHEF_DIRECTION_AMBIGUOUS",
+      "Chef direction is ambiguous; exactly one intent is required for a single operation proposal."
+    );
+  }
+  if (matches.length === 0) {
+    fail(
+      "CHEF_DIRECTION_UNSUPPORTED",
+      "Unsupported direction: low confidence to map to a safe single mutation operation."
+    );
+  }
+
+  const selected = matches[0];
+  if (!selected) {
+    fail(
+      "CHEF_DIRECTION_UNSUPPORTED",
+      "Unsupported direction: low confidence to map to a safe single mutation operation."
+    );
+  }
+
+  const mutationPlan = planWorkflowMutation({
+    artifact,
+    prompt: selected.mutationPrompt
+  });
+
+  return {
+    mutationPlan,
+    confidence: selected.confidence,
+    rationale: selected.rationale
+  };
+}
+
+function buildDirectionProposal({
+  artifact,
+  cleanDirection,
+  rewrittenDirection,
+  resolvedAnchors
+}) {
+  const planned = planSingleMutationForDirection(artifact, rewrittenDirection);
+  return {
+    proposalId: buildProposalId({
+      artifactId: artifact.artifactId,
+      direction: cleanDirection,
+      operationType: planned.mutationPlan.operationType,
+      operation: planned.mutationPlan.operation
+    }),
+    sourceArtifactId: artifact.artifactId,
+    direction: cleanDirection,
+    operationType: planned.mutationPlan.operationType,
+    operation: planned.mutationPlan.operation,
+    resolvedAnchors,
+    ambiguity: "none",
+    confidence: planned.confidence,
+    rationale: planned.rationale,
+    diagnostics: {
+      plannerVersion: "0.1.0",
+      mode: "bounded-operation-direction-v1",
+      warnings: []
+    }
+  };
+}
+
+function resolveRoleAnchorsInDirection({
+  artifact,
+  direction,
+  allowAmbiguityChoices
+}) {
   const resolvedAnchors = [];
+  const ambiguousReferences = [];
   let rewrittenDirection = String(direction);
+  let roleTokenCounter = 0;
 
   const resolveReference = (matched) => {
-    const resolved = resolveChefRoleAnchor({
+    const analyzed = listChefRoleCandidates({
       artifact,
       roleReference: matched
     });
+    const candidates = [...analyzed.candidates].sort((left, right) => left.localeCompare(right));
+
+    if (analyzed.selector === "first") {
+      const nodeId = candidates[0];
+      resolvedAnchors.push({
+        roleReference: matched,
+        role: analyzed.role,
+        selector: analyzed.selector,
+        nodeId
+      });
+      return nodeId;
+    }
+
+    if (analyzed.selector === "latest") {
+      const nodeId = candidates[candidates.length - 1];
+      resolvedAnchors.push({
+        roleReference: matched,
+        role: analyzed.role,
+        selector: analyzed.selector,
+        nodeId
+      });
+      return nodeId;
+    }
+
+    if (candidates.length > 1) {
+      const token = `__moonstone_role_anchor_${roleTokenCounter}__`;
+      roleTokenCounter += 1;
+      ambiguousReferences.push({
+        token,
+        roleReference: matched,
+        role: analyzed.role,
+        selector: analyzed.selector,
+        candidates
+      });
+      return token;
+    }
+
+    const nodeId = candidates[0];
     resolvedAnchors.push({
       roleReference: matched,
-      role: resolved.role,
-      selector: resolved.selector,
-      nodeId: resolved.nodeId
+      role: analyzed.role,
+      selector: analyzed.selector,
+      nodeId
     });
-    return resolved.nodeId;
+    return nodeId;
   };
 
   const afterPattern = new RegExp(`\\bafter\\s+(${ROLE_REFERENCE_CAPTURE})\\b`, "gi");
@@ -241,16 +360,55 @@ function resolveRoleAnchorsInDirection(artifact, direction) {
   const removeLeafPattern = new RegExp(`\\bremove\\s+leaf\\s+node\\s+(${ROLE_REFERENCE_CAPTURE})\\b`, "gi");
   rewrittenDirection = rewrittenDirection.replace(removeLeafPattern, (_full, matched) => `remove leaf node ${resolveReference(matched)}`);
 
+  if (ambiguousReferences.length === 0) {
+    return {
+      status: "resolved",
+      rewrittenDirection,
+      resolvedAnchors
+    };
+  }
+
+  if (ambiguousReferences.length > 1) {
+    fail(
+      "CHEF_DIRECTION_MULTI_ROLE_AMBIGUOUS",
+      "Direction contains multiple ambiguous role references; add disambiguators (for example first/latest)."
+    );
+  }
+
+  if (!allowAmbiguityChoices) {
+    fail(
+      "CHEF_ROLE_AMBIGUOUS",
+      `Role reference '${ambiguousReferences[0].roleReference}' is ambiguous (${ambiguousReferences[0].candidates.length} candidates).`
+    );
+  }
+
+  const ambiguous = ambiguousReferences[0];
+  const candidateResolutions = ambiguous.candidates
+    .map((nodeId) => ({
+      nodeId,
+      rewrittenDirection: rewrittenDirection.replaceAll(ambiguous.token, nodeId),
+      resolvedAnchors: [
+        ...resolvedAnchors,
+        {
+          roleReference: ambiguous.roleReference,
+          role: ambiguous.role,
+          selector: ambiguous.selector,
+          nodeId
+        }
+      ]
+    }))
+    .sort((left, right) => left.nodeId.localeCompare(right.nodeId));
+
   return {
-    rewrittenDirection,
-    resolvedAnchors
+    status: "choice_required",
+    candidateResolutions
   };
 }
 
 /**
  * @param {{
  *   artifact: Record<string, unknown>,
-  *   direction: string
+ *   direction: string
  * }} input
  */
 export function planChefDirection({ artifact, direction }) {
@@ -258,61 +416,65 @@ export function planChefDirection({ artifact, direction }) {
   validateWorkflowArtifact(normalizedArtifact);
 
   const cleanDirection = normalizeDirection(direction);
-  const roleResolved = resolveRoleAnchorsInDirection(normalizedArtifact, cleanDirection);
-  const parsers = [
-    parseConnectDirection,
-    parseRemoveLeafDirection,
-    parseReplaceDirection,
-    parseAddHttpDirection,
-    parseAddOpenAISummaryDirection
-  ];
-  const matches = parsers
-    .map((parser) => parser(roleResolved.rewrittenDirection))
-    .filter((entry) => entry !== null);
-
-  if (matches.length > 1) {
-    fail(
-      "CHEF_DIRECTION_AMBIGUOUS",
-      "Chef direction is ambiguous; exactly one intent is required for a single operation proposal."
-    );
-  }
-  if (matches.length === 0) {
-    fail(
-      "CHEF_DIRECTION_UNSUPPORTED",
-      "Unsupported direction: low confidence to map to a safe single mutation operation."
-    );
-  }
-  const selected = matches[0];
-  if (!selected) {
-    fail(
-      "CHEF_DIRECTION_UNSUPPORTED",
-      "Unsupported direction: low confidence to map to a safe single mutation operation."
-    );
-  }
-  const mutationPlan = planWorkflowMutation({
+  const roleResolved = resolveRoleAnchorsInDirection({
     artifact: normalizedArtifact,
-    prompt: selected.mutationPrompt
+    direction: cleanDirection,
+    allowAmbiguityChoices: false
   });
 
-  return {
-    proposalId: buildProposalId({
-      artifactId: normalizedArtifact.artifactId,
-      direction: cleanDirection,
-      operationType: mutationPlan.operationType,
-      operation: mutationPlan.operation
-    }),
-    sourceArtifactId: normalizedArtifact.artifactId,
+  if (roleResolved.status !== "resolved") {
+    fail(
+      "CHEF_DIRECTION_INTERNAL_ERROR",
+      "Unexpected planner state while resolving direction."
+    );
+  }
+
+  return buildDirectionProposal({
+    artifact: normalizedArtifact,
+    cleanDirection,
+    rewrittenDirection: roleResolved.rewrittenDirection,
+    resolvedAnchors: roleResolved.resolvedAnchors
+  });
+}
+
+/**
+ * @param {{
+ *   artifact: Record<string, unknown>,
+ *   direction: string
+ * }} input
+ */
+export function planChefDirectionWithChoices({ artifact, direction }) {
+  const normalizedArtifact = normalizeWorkflowArtifact(artifact);
+  validateWorkflowArtifact(normalizedArtifact);
+
+  const cleanDirection = normalizeDirection(direction);
+  const roleResolved = resolveRoleAnchorsInDirection({
+    artifact: normalizedArtifact,
     direction: cleanDirection,
-    operationType: mutationPlan.operationType,
-    operation: mutationPlan.operation,
-    resolvedAnchors: roleResolved.resolvedAnchors,
-    ambiguity: "none",
-    confidence: selected.confidence,
-    rationale: selected.rationale,
-    diagnostics: {
-      plannerVersion: "0.1.0",
-      mode: "bounded-operation-direction-v1",
-      warnings: []
-    }
+    allowAmbiguityChoices: true
+  });
+
+  if (roleResolved.status === "resolved") {
+    return {
+      status: "resolved",
+      proposal: buildDirectionProposal({
+        artifact: normalizedArtifact,
+        cleanDirection,
+        rewrittenDirection: roleResolved.rewrittenDirection,
+        resolvedAnchors: roleResolved.resolvedAnchors
+      })
+    };
+  }
+
+  return {
+    status: "choice_required",
+    proposalCandidates: roleResolved.candidateResolutions.map((candidate) =>
+      buildDirectionProposal({
+        artifact: normalizedArtifact,
+        cleanDirection,
+        rewrittenDirection: candidate.rewrittenDirection,
+        resolvedAnchors: candidate.resolvedAnchors
+      })
+    )
   };
 }

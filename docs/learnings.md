@@ -259,6 +259,12 @@
 - Showing a generated tool list is not enough if multi-step prompts still collapse to one fixed action node.
 - Deterministic extraction of ordered HTTP calls from prompt text is a practical bridge between rigid templates and fully open-ended tool synthesis.
 
+## 2026-03-13: Ad-Hoc TS Adoption During POC Delivery Creates Toolchain Drift
+
+- Introducing `.ts` incrementally into a `.mjs`-dominant Node-direct runtime creates a mixed contract that increases debugging and CI ambiguity.
+- During product-discovery slices, keep one dominant module/runtime path and use strict `checkJs` for type safety until a dedicated migration slice is approved.
+- Treat TypeScript source migration as a standalone milestone with explicit conversion boundaries and gate parity, not as opportunistic per-feature edits.
+
 ## 2026-03-13: Command Envelopes Should Carry Resolved Payloads, Not Templates
 
 - If command payloads retain unresolved templates, inspect timelines under-report actual runtime behavior and hide dataflow correctness issues.
@@ -303,3 +309,15 @@
 
 - Global phrase replacement for role aliases (`summary step`, `request step`) can corrupt operation descriptors such as \"add summary step\" and break valid intent mapping.
 - Restricting role substitution to structural anchor contexts (`after`, `connect ... to ...`, `replace ... with`, `remove leaf ...`) keeps node-id-free direction support safe and predictable.
+
+## 2026-03-13: Ambiguity Should Trigger Deterministic Choice, Not Guessing
+
+- Hard-failing every role ambiguity forces users back to implementation details and collapses lead-chef abstraction.
+- A safer middle path is deterministic proposal candidates plus explicit selection (`--proposal-id`) before apply.
+- Keep fail-closed behavior for multi-ambiguous directions; candidate explosion and hidden heuristics are worse than explicit rejection.
+
+## 2026-03-13: Pilot Qualification Must Be Checkpoint-Gated, Not Open-Loop
+
+- Without explicit checkpoint gates, teams can pass many local tests while still drifting from product-level pilot criteria.
+- A C0..C5 fail-closed checkpoint model (entry gate, RED harness, GREEN gap closure, REFACTOR, strict final gate) forces measurable progress and prevents silent scope creep.
+- Pilot acceptance should be scenario-corpus-driven with deterministic evidence, not ad hoc “looks good” demos.

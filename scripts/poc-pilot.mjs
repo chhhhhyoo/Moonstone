@@ -2,7 +2,7 @@ import path from "node:path";
 import { compilePrompt } from "../src/core/poc/PromptCompiler.mjs";
 import { planWorkflowMutation } from "../src/core/poc/WorkflowMutationPlanner.mjs";
 import { applyWorkflowMutation } from "../src/core/poc/WorkflowMutationApplier.mjs";
-import { planChefDirection } from "../src/core/poc/ChefDirectionPlanner.mjs";
+import { planChefDirectionWithChoices } from "../src/core/poc/ChefDirectionPlanner.mjs";
 import { buildChefDirectionPreview } from "../src/core/poc/ChefDirectionPlannerPreview.mjs";
 import { WorkflowRuntime } from "../src/core/poc/WorkflowRuntime.mjs";
 import { FileRunJournalStore } from "../src/service/poc/FileRunJournalStore.mjs";
@@ -110,6 +110,9 @@ async function main() {
   if (args.direction === true) {
     throw new Error("Optional --direction requires a value.");
   }
+  if (args["proposal-id"] === true) {
+    throw new Error("Optional --proposal-id requires a value.");
+  }
   if (args["apply-direction"] && args["apply-direction"] !== true) {
     throw new Error("Flag --apply-direction does not accept a value.");
   }
@@ -126,11 +129,15 @@ async function main() {
   const feedbackPrompt = args.feedback ? String(args.feedback).trim() : null;
   const direction = args.direction ? String(args.direction).trim() : null;
   const applyDirection = Boolean(args["apply-direction"]);
+  const selectedProposalId = args["proposal-id"] ? String(args["proposal-id"]).trim() : null;
   if (feedbackPrompt && direction) {
     throw new Error("Use either --feedback or --direction, not both.");
   }
   if (applyDirection && !direction) {
     throw new Error("Flag --apply-direction requires --direction.");
+  }
+  if (selectedProposalId && !applyDirection) {
+    throw new Error("Flag --proposal-id requires --apply-direction.");
   }
 
   const isDirectionProposalOnly = Boolean(direction && !applyDirection);
@@ -171,6 +178,8 @@ async function main() {
   let effectiveArtifact = null;
   let diagnostics = null;
   let proposal = null;
+  let proposalCandidates = [];
+  let directionPlanStatus = null;
   let mutation = {
     applied: false,
     operationType: null,
@@ -201,33 +210,76 @@ async function main() {
 
   effectiveArtifact = sourceArtifact;
   if (direction) {
-    proposal = {
-      ...planChefDirection({
-        artifact: sourceArtifact,
-        direction
-      }),
-      preview: buildChefDirectionPreview({
-        artifact: sourceArtifact,
-        direction
-      }),
-      applied: false
-    };
+    const directionPlan = planChefDirectionWithChoices({
+      artifact: sourceArtifact,
+      direction
+    });
+    directionPlanStatus = directionPlan.status;
+
+    if (directionPlan.status === "resolved") {
+      proposal = {
+        ...directionPlan.proposal,
+        preview: buildChefDirectionPreview({
+          artifact: sourceArtifact,
+          proposal: directionPlan.proposal
+        }),
+        applied: false
+      };
+      proposalCandidates = [];
+    } else {
+      proposal = null;
+      proposalCandidates = directionPlan.proposalCandidates.map((candidate) => ({
+        ...candidate,
+        preview: buildChefDirectionPreview({
+          artifact: sourceArtifact,
+          proposal: candidate
+        }),
+        applied: false
+      }));
+    }
   }
 
   if (feedbackPrompt || applyDirection) {
+    let selectedDirectionProposal = proposal;
+    if (applyDirection && directionPlanStatus === "choice_required") {
+      if (!selectedProposalId) {
+        throw new Error(
+          "CHEF_DIRECTION_PROPOSAL_ID_REQUIRED: Ambiguous direction requires --proposal-id to select one proposal candidate."
+        );
+      }
+      selectedDirectionProposal = proposalCandidates.find((candidate) => candidate.proposalId === selectedProposalId) ?? null;
+      if (!selectedDirectionProposal) {
+        throw new Error(
+          `CHEF_DIRECTION_PROPOSAL_ID_UNKNOWN: Unknown proposal id '${selectedProposalId}' for current direction candidates.`
+        );
+      }
+      proposalCandidates = proposalCandidates.map((candidate) => ({
+        ...candidate,
+        selected: candidate.proposalId === selectedDirectionProposal.proposalId
+      }));
+      proposal = {
+        ...selectedDirectionProposal,
+        applied: true,
+        selected: true
+      };
+    }
+    if (applyDirection && !selectedDirectionProposal) {
+      throw new Error("CHEF_DIRECTION_PROPOSAL_MISSING: Direction apply requires a resolved proposal.");
+    }
+
     const mutationPlan = feedbackPrompt
       ? planWorkflowMutation({
           artifact: sourceArtifact,
           prompt: feedbackPrompt
         })
       : {
-          planId: `direction.${proposal.proposalId}`,
+          planId: `direction.${selectedDirectionProposal.proposalId}`,
           sourceArtifactId: sourceArtifact.artifactId,
           prompt: `direction:${direction}`,
-          operationType: proposal.operationType,
-          operation: proposal.operation,
+          operationType: selectedDirectionProposal.operationType,
+          operation: selectedDirectionProposal.operation,
           diagnostics: {
-            plannerVersion: proposal.diagnostics?.plannerVersion ?? "0.1.0",
+            plannerVersion: selectedDirectionProposal.diagnostics?.plannerVersion ?? "0.1.0",
             mode: "chef-direction-proposal",
             warnings: []
           }
@@ -267,6 +319,9 @@ async function main() {
   await writeJsonFile(toolsPath, generatedTools);
 
   if (isDirectionProposalOnly) {
+    const proposalOnlyStatus = directionPlanStatus === "choice_required"
+      ? "proposal_choice_required"
+      : "proposal_only";
     console.log(JSON.stringify({
       ok: true,
       mode,
@@ -275,12 +330,13 @@ async function main() {
       feedback: feedbackPrompt,
       direction,
       runId: null,
-      status: "proposal_only",
+      status: proposalOnlyStatus,
       diagnostics: {
         branchMode: diagnostics.branchMode,
         warnings: diagnostics.warnings
       },
       proposal,
+      proposalCandidates,
       lineage: {
         sourceArtifactPath: resolvedSourceArtifactPath,
         effectiveArtifactPath: resolvedEffectiveArtifactPath,
@@ -341,6 +397,7 @@ async function main() {
       warnings: diagnostics.warnings
     },
     proposal,
+    proposalCandidates,
     lineage: {
       sourceArtifactPath: resolvedSourceArtifactPath,
       effectiveArtifactPath: resolvedEffectiveArtifactPath,

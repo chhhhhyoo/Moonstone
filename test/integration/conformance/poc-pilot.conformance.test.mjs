@@ -497,3 +497,158 @@ test("poc:pilot supports role-based direction without explicit node ids", async 
     await rm(tempRoot, { recursive: true, force: true });
   }
 });
+
+test("poc:pilot returns proposal-choice-required for ambiguous role anchors and enforces --proposal-id on apply", async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), "moonstone-poc-pilot-direction-ambiguity-choice-"));
+  try {
+    const initialOutDir = path.join(tempRoot, "initial");
+    const feedbackOutDir = path.join(tempRoot, "feedback");
+    const proposalOutDir = path.join(tempRoot, "proposal");
+    const applyOutDir = path.join(tempRoot, "apply");
+    const journalDir = path.join(tempRoot, "journal");
+
+    const initialResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--prompt",
+      "POST https://api.example.com/orders then summarize result",
+      "--input",
+      "{\"text\":\"pilot-direction-ambiguity-initial\"}",
+      "--outdir",
+      initialOutDir,
+      "--journal-dir",
+      journalDir,
+      "--run-id",
+      "pilot-direction-ambiguity-initial-001"
+    ]);
+    const initialPayload = parseJsonOutput(initialResult.stdout, "poc:pilot(initial-direction-ambiguity)");
+    const sourceBeforeRaw = await readFile(initialPayload.paths.artifactPath, "utf8");
+
+    const feedbackResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--artifact",
+      initialPayload.paths.artifactPath,
+      "--feedback",
+      "add openai after http-1 model gpt-4o-mini prompt \"Summarize result for operator.\" on success",
+      "--input",
+      "{\"text\":\"pilot-direction-ambiguity-feedback\"}",
+      "--outdir",
+      feedbackOutDir,
+      "--journal-dir",
+      journalDir,
+      "--run-id",
+      "pilot-direction-ambiguity-feedback-001"
+    ]);
+    const feedbackPayload = parseJsonOutput(feedbackResult.stdout, "poc:pilot(feedback-direction-ambiguity)");
+    const ambiguousArtifactPath = feedbackPayload.lineage.effectiveArtifactPath;
+    await expectFile(ambiguousArtifactPath);
+
+    const direction = "After summary step, add a summary step for the operator.";
+    const proposalResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--artifact",
+      ambiguousArtifactPath,
+      "--direction",
+      direction,
+      "--outdir",
+      proposalOutDir,
+      "--journal-dir",
+      journalDir
+    ]);
+    const proposalPayload = parseJsonOutput(proposalResult.stdout, "poc:pilot(direction-ambiguity-proposal)");
+    assert.equal(proposalPayload.ok, true);
+    assert.equal(proposalPayload.status, "proposal_choice_required");
+    assert.equal(proposalPayload.runId, null);
+    assert.equal(proposalPayload.proposal, null);
+    assert.ok(Array.isArray(proposalPayload.proposalCandidates));
+    assert.equal(proposalPayload.proposalCandidates.length, 2);
+
+    const candidateNodeIds = proposalPayload.proposalCandidates.map((entry) => entry.operation.afterNodeId);
+    assert.deepEqual(candidateNodeIds, [...candidateNodeIds].sort());
+    assert.ok(proposalPayload.proposalCandidates.every((entry) => typeof entry.proposalId === "string"));
+
+    await assert.rejects(
+      () => runNodeScript([
+        "scripts/poc-pilot.mjs",
+        "--mode",
+        "mock",
+        "--artifact",
+        ambiguousArtifactPath,
+        "--direction",
+        direction,
+        "--apply-direction",
+        "--input",
+        "{\"text\":\"pilot-direction-ambiguity-apply-missing-proposal-id\"}",
+        "--outdir",
+        applyOutDir,
+        "--journal-dir",
+        journalDir,
+        "--run-id",
+        "pilot-direction-ambiguity-apply-missing-proposal-id-001"
+      ]),
+      /CHEF_DIRECTION_PROPOSAL_ID_REQUIRED/i
+    );
+
+    await assert.rejects(
+      () => runNodeScript([
+        "scripts/poc-pilot.mjs",
+        "--mode",
+        "mock",
+        "--artifact",
+        ambiguousArtifactPath,
+        "--direction",
+        direction,
+        "--apply-direction",
+        "--proposal-id",
+        "proposal.invalid",
+        "--input",
+        "{\"text\":\"pilot-direction-ambiguity-apply-invalid-proposal-id\"}",
+        "--outdir",
+        applyOutDir,
+        "--journal-dir",
+        journalDir,
+        "--run-id",
+        "pilot-direction-ambiguity-apply-invalid-proposal-id-001"
+      ]),
+      /CHEF_DIRECTION_PROPOSAL_ID_UNKNOWN/i
+    );
+
+    const selectedProposalId = proposalPayload.proposalCandidates[0].proposalId;
+    const applyResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--artifact",
+      ambiguousArtifactPath,
+      "--direction",
+      direction,
+      "--apply-direction",
+      "--proposal-id",
+      selectedProposalId,
+      "--input",
+      "{\"text\":\"pilot-direction-ambiguity-apply\"}",
+      "--outdir",
+      applyOutDir,
+      "--journal-dir",
+      journalDir,
+      "--run-id",
+      "pilot-direction-ambiguity-apply-001"
+    ]);
+    const applyPayload = parseJsonOutput(applyResult.stdout, "poc:pilot(direction-ambiguity-apply)");
+    assert.equal(applyPayload.ok, true);
+    assert.equal(applyPayload.status, "completed");
+    assert.equal(applyPayload.runId, "pilot-direction-ambiguity-apply-001");
+    assert.equal(applyPayload.proposal.proposalId, selectedProposalId);
+    assert.equal(applyPayload.proposal.applied, true);
+
+    const sourceAfterRaw = await readFile(initialPayload.paths.artifactPath, "utf8");
+    assert.equal(sourceAfterRaw, sourceBeforeRaw, "ambiguity-choice apply must not mutate original source artifact file");
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+});
