@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { planChefDirection, planChefDirectionWithChoices } from "../../../src/core/poc/ChefDirectionPlanner.mjs";
+import { planChefDirection, planChefDirectionWithChoices, planChefDirectionPack } from "../../../src/core/poc/ChefDirectionPlanner.mjs";
 
 function sampleArtifact() {
   return {
@@ -280,4 +280,51 @@ test("planChefDirectionWithChoices orders numeric-suffixed role candidates in na
     "openai-summary-2",
     "openai-summary-10"
   ]);
+});
+
+test("planChefDirectionPack plans deterministic multi-clause direction against evolving artifact state", () => {
+  const artifact = sampleArtifact();
+  const direction = [
+    "After http-1, add an API check step using GET https://api.example.com/orders/summary.",
+    "then connect http-2 to openai-success-1 on success."
+  ].join(" ");
+
+  const left = planChefDirectionPack({ artifact, direction });
+  const right = planChefDirectionPack({ artifact, direction });
+
+  assert.deepEqual(left, right);
+  assert.equal(left.status, "resolved");
+  assert.ok(left.proposalPack);
+  assert.equal(left.proposalPack.proposals.length, 2);
+  assert.equal(left.proposalPack.proposals[0].operationType, "add_http_after");
+  assert.equal(left.proposalPack.proposals[1].operationType, "connect_nodes");
+  assert.equal(left.proposalPack.proposals[1].operation.fromNodeId, "http-2");
+});
+
+test("planChefDirectionPack fails closed when clause count exceeds hard limit", () => {
+  assert.throws(
+    () => planChefDirectionPack({
+      artifact: sampleArtifact(),
+      direction: [
+        "connect trigger to http-1 on always",
+        "then connect http-1 to openai-success-1 on success",
+        "then replace node openai-success-1 with openai model gpt-4o-mini prompt \"Summarize result for operator.\"",
+        "then remove leaf node openai-success-1"
+      ].join(" ")
+    }),
+    /PACK_TOO_LARGE|clause|limit/i
+  );
+});
+
+test("planChefDirectionPack fails closed when any clause is ambiguous", () => {
+  assert.throws(
+    () => planChefDirectionPack({
+      artifact: sampleArtifactWithAmbiguousSummaryRole(),
+      direction: [
+        "After summary step, add a summary step for the operator.",
+        "then connect trigger step to summary step."
+      ].join(" ")
+    }),
+    /PACK_CLAUSE_AMBIGUOUS|ambiguous|pack/i
+  );
 });

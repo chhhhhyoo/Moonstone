@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { normalizeWorkflowArtifact, validateWorkflowArtifact } from "./WorkflowArtifact.mjs";
 import { planWorkflowMutation } from "./WorkflowMutationPlanner.mjs";
+import { applyWorkflowMutation } from "./WorkflowMutationApplier.mjs";
 import { listChefRoleCandidates } from "./ChefDirectionPlannerRoles.mjs";
 
 const EVENT_VALUES = new Set(["always", "success", "failed"]);
@@ -82,6 +83,19 @@ function buildProposalId({ artifactId, direction, operationType, operation }) {
   });
   const hash = createHash("sha256").update(seed).digest("hex").slice(0, 12);
   return `proposal.${hash}`;
+}
+
+function buildDirectionPackId({ artifactId, clauses, proposals }) {
+  const seed = JSON.stringify({
+    artifactId,
+    clauses: clauses.map((entry) => entry.toLowerCase()),
+    proposals: proposals.map((proposal) => ({
+      operationType: proposal.operationType,
+      operation: proposal.operation
+    }))
+  });
+  const hash = createHash("sha256").update(seed).digest("hex").slice(0, 12);
+  return `pack.${hash}`;
 }
 
 function extractAfterNodeId(direction) {
@@ -518,5 +532,119 @@ export function planChefDirectionWithChoices({ artifact, direction }) {
         resolvedAnchors: candidate.resolvedAnchors
       })
     )
+  };
+}
+
+function splitDirectionClauses(direction) {
+  return String(direction)
+    .split(/\s+\bthen\b\s+/i)
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+}
+
+function buildPreviewPlanFromProposal({ artifact, proposal, clauseDirection, clauseIndex }) {
+  return {
+    planId: `pack-preview.${proposal.proposalId}.${clauseIndex}`,
+    sourceArtifactId: artifact.artifactId,
+    prompt: `direction-pack:${clauseDirection}`,
+    operationType: proposal.operationType,
+    operation: proposal.operation,
+    diagnostics: {
+      plannerVersion: proposal.diagnostics?.plannerVersion ?? "0.1.0",
+      mode: "chef-direction-pack-preview",
+      warnings: []
+    }
+  };
+}
+
+/**
+ * @param {{
+ *   artifact: Record<string, unknown>,
+ *   direction: string,
+ *   maxClauses?: number
+ * }} input
+ */
+export function planChefDirectionPack({ artifact, direction, maxClauses = 3 }) {
+  const normalizedArtifact = normalizeWorkflowArtifact(artifact);
+  validateWorkflowArtifact(normalizedArtifact);
+
+  const cleanDirection = normalizeDirection(direction);
+  const clauses = splitDirectionClauses(cleanDirection);
+  if (clauses.length < 2) {
+    fail(
+      "CHEF_DIRECTION_PACK_REQUIRED",
+      "Direction pack mode requires at least two clauses separated by 'then'."
+    );
+  }
+  if (clauses.length > maxClauses) {
+    fail(
+      "CHEF_DIRECTION_PACK_TOO_LARGE",
+      `Direction pack supports at most ${maxClauses} clauses in v1.`
+    );
+  }
+
+  let workingArtifact = normalizedArtifact;
+  const proposals = [];
+
+  for (let index = 0; index < clauses.length; index += 1) {
+    const clauseDirection = clauses[index];
+    const planned = planChefDirectionWithChoices({
+      artifact: workingArtifact,
+      direction: clauseDirection
+    });
+
+    if (planned.status !== "resolved") {
+      fail(
+        "CHEF_DIRECTION_PACK_CLAUSE_AMBIGUOUS",
+        `Direction pack clause ${index + 1} is ambiguous; v1 requires each clause to resolve to one proposal.`
+      );
+    }
+
+    const clauseProposal = {
+      ...planned.proposal,
+      clauseIndex: index + 1,
+      clauseDirection
+    };
+    proposals.push(clauseProposal);
+
+    const previewPlan = buildPreviewPlanFromProposal({
+      artifact: workingArtifact,
+      proposal: clauseProposal,
+      clauseDirection,
+      clauseIndex: index + 1
+    });
+    const previewApply = applyWorkflowMutation({
+      artifact: workingArtifact,
+      plan: previewPlan
+    });
+    workingArtifact = previewApply.mutatedArtifact;
+  }
+
+  const confidenceValues = proposals.map((entry) => Number(entry.confidence ?? 0));
+  const confidence = confidenceValues.length > 0
+    ? Math.min(...confidenceValues)
+    : 0;
+
+  return {
+    status: "resolved",
+    proposalPack: {
+      packId: buildDirectionPackId({
+        artifactId: normalizedArtifact.artifactId,
+        clauses,
+        proposals
+      }),
+      sourceArtifactId: normalizedArtifact.artifactId,
+      direction: cleanDirection,
+      clauseCount: clauses.length,
+      clauses,
+      proposals,
+      ambiguity: "none",
+      confidence,
+      diagnostics: {
+        plannerVersion: "0.1.0",
+        mode: "bounded-operation-direction-pack-v1",
+        warnings: []
+      }
+    }
   };
 }

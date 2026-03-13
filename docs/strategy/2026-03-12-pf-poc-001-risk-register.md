@@ -28,9 +28,10 @@
 | POC-022 | Broader intent-direction parsing can introduce incorrect graph mutations if operation inference is under-specified or proposal output hides concrete graph delta before apply | medium | critical | Add bounded operation-intent contracts with required hints plus deterministic proposal diff preview and fail-closed rejection on low-confidence/ambiguous directions | core | done |
 | POC-023 | Role-based node anchor inference can silently target wrong nodes when multiple candidates match a natural-language reference (for example “summary step”, “request node”) | medium | critical | Introduce deterministic role-index resolution with explicit ambiguity rejection and qualification matrix for node-id-free direction paths | core | done |
 | POC-024 | Hard-failing on role-anchor ambiguity can push users back to implementation-level node IDs and break lead-chef review flow when multiple valid candidates exist | medium | high | Add deterministic proposal-choice contract for exactly one ambiguous role reference, require explicit proposal-id selection for apply, and fail closed on multi-ambiguous references | core | done |
-| POC-025 | Pilot-01 confidence can become demo theater if scenario coverage stays narrow and does not enforce the lead-chef acceptance contract across proposal/apply/run/replay paths | medium | critical | Add fail-closed Pilot-01 scenario corpus with qualification criteria and command/receipt continuity assertions under checkpoint-gated execution | core | in_progress |
-| POC-026 | Proposal-choice determinism can regress across repeated runs (candidate ordering/proposal IDs/previews), undermining reproducibility and trust | medium | high | Add deterministic rerun assertions for role-ambiguity proposal-choice semantics in unit + conformance suites | core | in_progress |
-| POC-027 | Operator actionability can drift if failure codes are not mapped to clear runbook handling, causing triage friction and misuse of direction/apply contracts | medium | medium | Normalize failure-code map in pilot runbook and enforce key error assertions in qualification scenarios | core | in_progress |
+| POC-025 | Pilot-01 confidence can become demo theater if scenario coverage stays narrow and does not enforce the lead-chef acceptance contract across proposal/apply/run/replay paths | medium | critical | Add fail-closed Pilot-01 scenario corpus with qualification criteria and command/receipt continuity assertions under checkpoint-gated execution | core | done |
+| POC-026 | Proposal-choice determinism can regress across repeated runs (candidate ordering/proposal IDs/previews), undermining reproducibility and trust | medium | high | Add deterministic rerun assertions for role-ambiguity proposal-choice semantics in unit + conformance suites | core | done |
+| POC-027 | Operator actionability can drift if failure codes are not mapped to clear runbook handling, causing triage friction and misuse of direction/apply contracts | medium | medium | Normalize failure-code map in pilot runbook and enforce key error assertions in qualification scenarios | core | done |
+| POC-028 | Lead-chef direction remains low-throughput if every intent requires single-operation micro-prompts, causing orchestration drift and poor n8n-style composition feel | medium | high | Add bounded multi-step direction-pack planning/apply (`then` chain), deterministic ordering, and atomic fail-closed apply semantics with strict qualification evidence | core | in_progress |
 
 ## Trigger Conditions
 
@@ -59,6 +60,7 @@
 23. Pilot-01 may appear stable in isolated tests while failing holistic lead-chef qualification if scenario corpus does not cover proposal/apply/run/replay continuity together.
 24. Candidate-selection flows can become non-reproducible if proposal ordering/IDs drift across equivalent repeated runs.
 25. Error-code outputs can remain technically correct but operationally weak when runbook mapping is incomplete or stale.
+26. Multi-clause direction apply can corrupt artifact lineage if operations are partially applied before a later clause fails.
 
 ## Exit Criteria For Risk Closure
 
@@ -89,3 +91,4 @@
 25. POC-025: closed when Pilot-01 scenario corpus and qualification criteria enforce lead-chef acceptance contract with strict conformance + verification evidence.
 26. POC-026: closed when repeated equivalent runs prove deterministic proposal-choice ordering, IDs, previews, and mutation summaries under automated assertions.
 27. POC-027: closed when key failure codes are enforced in tests and mapped to explicit operator actions in runbook documentation.
+28. POC-028: closed when bounded multi-clause direction packs are proposed/applied deterministically with atomic all-or-none mutation semantics and strict qualification evidence.

@@ -224,6 +224,47 @@ Gate scope:
 5. unsupported vague direction deterministic failure payload,
 6. inspect/replay continuity for applied scenarios.
 
+## Multi-Step Direction Pack (PF-POC-022)
+
+When chef intent spans multiple topology mutations, chain bounded clauses with `then`.
+
+```bash
+npm run poc:pilot -- \
+  --mode mock \
+  --artifact .moonstone/pilot/chef-initial/artifact.json \
+  --direction "After http-1, add an API check step using GET https://api.example.com/orders/summary. then connect http-2 to openai-success-1 on success." \
+  --outdir .moonstone/pilot/chef-direction-pack-proposal
+```
+
+Expected proposal contract:
+
+1. `status` is `proposal_pack_only`.
+2. `proposalPack.packId` is deterministic for equivalent artifact + direction.
+3. `proposalPack.proposals[]` is ordered by clause index and deterministic.
+4. no run is executed until `--apply-direction` is supplied.
+
+Apply full pack atomically:
+
+```bash
+npm run poc:pilot -- \
+  --mode mock \
+  --artifact .moonstone/pilot/chef-initial/artifact.json \
+  --direction "After http-1, add an API check step using GET https://api.example.com/orders/summary. then connect http-2 to openai-success-1 on success." \
+  --apply-direction \
+  --input '{"text":"chef-direction-pack-apply"}' \
+  --outdir .moonstone/pilot/chef-direction-pack-apply \
+  --run-id chef-direction-pack-apply-001
+```
+
+Pack safety limits in v1:
+
+1. clause separator is explicit `then` only,
+2. max `3` clauses (`CHEF_DIRECTION_PACK_TOO_LARGE` on overflow),
+3. each clause must resolve deterministically to one proposal,
+4. ambiguous clause in pack mode fails closed (`CHEF_DIRECTION_PACK_CLAUSE_AMBIGUOUS`),
+5. `--proposal-id` is unsupported for pack apply in v1 (`CHEF_DIRECTION_PACK_PROPOSAL_ID_UNSUPPORTED`),
+6. apply is all-or-none over the full pack (no partial mutated artifact output).
+
 ## Direct-Apply Mutation Check (PF-POC-015)
 
 ```bash

@@ -130,6 +130,7 @@
 - `notes/spec-impact/2026-03-13-pf-poc-019-role-based-anchors.md`: 2026-03-13 PF-POC-019 Role-Based Direction Anchor Impact
 - `notes/spec-impact/2026-03-13-pf-poc-020-role-ambiguity-choice-flow.md`: 2026-03-13 PF-POC-020 Role-Ambiguity Choice Flow Impact
 - `notes/spec-impact/2026-03-13-pf-poc-021-pilot-01-qualification-gate.md`: 2026-03-13 PF-POC-021 Pilot-01 Qualification Gate Impact
+- `notes/spec-impact/2026-03-13-pf-poc-022-direction-pack-v1.md`: 2026-03-13 PF-POC-022 Direction Pack v1 Impact
 - `notes/spec-impact/2026-03-13-pf-poc-module-format-decision.md`: 2026-03-13 POC Module Format Decision (MJS Now, TS Slice Later)
 
 ## Documentation Catalog
