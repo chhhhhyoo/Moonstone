@@ -10,6 +10,15 @@ async function expectFile(filePath) {
   assert.ok(info.isFile(), `expected file: ${filePath}`);
 }
 
+async function fileExists(filePath) {
+  try {
+    const info = await stat(filePath);
+    return info.isFile();
+  } catch {
+    return false;
+  }
+}
+
 test("poc:pilot compiles and runs prompt workflow in mock mode", async () => {
   const tempRoot = await mkdtemp(path.join(tmpdir(), "moonstone-poc-pilot-"));
   try {
@@ -238,6 +247,90 @@ test("poc:pilot supports artifact-first feedback mutation loop with deterministi
     const replay = JSON.parse(await readFile(feedbackPayload.paths.replayPath, "utf8"));
     assert.equal(replay.runId, "pilot-feedback-revision-001");
     assert.equal(replay.status, "completed");
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("poc:pilot supports direction proposal and apply-confirm loop", async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), "moonstone-poc-pilot-direction-loop-"));
+  try {
+    const outDir = path.join(tempRoot, "initial");
+    const proposalOutDir = path.join(tempRoot, "proposal");
+    const applyOutDir = path.join(tempRoot, "apply");
+    const journalDir = path.join(tempRoot, "journal");
+
+    const initialResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--prompt",
+      "POST https://api.example.com/orders then summarize result",
+      "--input",
+      "{\"text\":\"pilot-direction-initial\"}",
+      "--outdir",
+      outDir,
+      "--journal-dir",
+      journalDir,
+      "--run-id",
+      "pilot-direction-initial-001"
+    ]);
+    const initialPayload = parseJsonOutput(initialResult.stdout, "poc:pilot(initial-direction)");
+    const sourceBeforeRaw = await readFile(initialPayload.paths.artifactPath, "utf8");
+
+    const direction = "After http-1, add a summary step for the operator.";
+    const proposalResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--artifact",
+      initialPayload.paths.artifactPath,
+      "--direction",
+      direction,
+      "--outdir",
+      proposalOutDir,
+      "--journal-dir",
+      journalDir
+    ]);
+    const proposalPayload = parseJsonOutput(proposalResult.stdout, "poc:pilot(direction-proposal)");
+    assert.equal(proposalPayload.ok, true);
+    assert.equal(proposalPayload.status, "proposal_only");
+    assert.equal(proposalPayload.runId, null);
+    assert.equal(proposalPayload.proposal.operationType, "add_openai_after");
+    assert.equal(proposalPayload.proposal.applied, false);
+    assert.equal(proposalPayload.lineage.sourceArtifactPath, initialPayload.paths.artifactPath);
+    assert.equal(proposalPayload.lineage.effectiveArtifactPath, initialPayload.paths.artifactPath);
+    assert.equal(await fileExists(proposalPayload.paths.runSummaryPath), false);
+
+    const applyResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--artifact",
+      initialPayload.paths.artifactPath,
+      "--direction",
+      direction,
+      "--apply-direction",
+      "--input",
+      "{\"text\":\"pilot-direction-apply\"}",
+      "--outdir",
+      applyOutDir,
+      "--journal-dir",
+      journalDir,
+      "--run-id",
+      "pilot-direction-apply-001"
+    ]);
+    const applyPayload = parseJsonOutput(applyResult.stdout, "poc:pilot(direction-apply)");
+    assert.equal(applyPayload.ok, true);
+    assert.equal(applyPayload.status, "completed");
+    assert.equal(applyPayload.runId, "pilot-direction-apply-001");
+    assert.equal(applyPayload.proposal.applied, true);
+    assert.equal(applyPayload.proposal.operationType, "add_openai_after");
+    assert.ok(applyPayload.lineage.effectiveArtifactPath.endsWith(".mutated.json"));
+    assert.ok(applyPayload.executedNodeIds.length >= 3);
+
+    const sourceAfterRaw = await readFile(initialPayload.paths.artifactPath, "utf8");
+    assert.equal(sourceAfterRaw, sourceBeforeRaw, "direction apply must not mutate source artifact file");
   } finally {
     await rm(tempRoot, { recursive: true, force: true });
   }

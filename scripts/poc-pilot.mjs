@@ -2,10 +2,11 @@ import path from "node:path";
 import { compilePrompt } from "../src/core/poc/PromptCompiler.mjs";
 import { planWorkflowMutation } from "../src/core/poc/WorkflowMutationPlanner.mjs";
 import { applyWorkflowMutation } from "../src/core/poc/WorkflowMutationApplier.mjs";
+import { planChefDirection } from "../src/core/poc/ChefDirectionPlanner.mjs";
 import { WorkflowRuntime } from "../src/core/poc/WorkflowRuntime.mjs";
 import { FileRunJournalStore } from "../src/service/poc/FileRunJournalStore.mjs";
 import { createDefaultConnectorExecutors } from "../src/provider/poc/ConnectorRegistry.mjs";
-import { parseArgs, requireArg, loadInput, loadArtifact, writeJsonFile } from "./poc-common.mjs";
+import { parseArgs, loadInput, loadArtifact, writeJsonFile } from "./poc-common.mjs";
 
 function slugify(input) {
   return String(input)
@@ -105,6 +106,12 @@ async function main() {
   if (args.feedback === true) {
     throw new Error("Optional --feedback requires a value.");
   }
+  if (args.direction === true) {
+    throw new Error("Optional --direction requires a value.");
+  }
+  if (args["apply-direction"] && args["apply-direction"] !== true) {
+    throw new Error("Flag --apply-direction does not accept a value.");
+  }
 
   const prompt = args.prompt ? String(args.prompt) : null;
   const artifactArg = args.artifact ? path.resolve(process.cwd(), String(args.artifact)) : null;
@@ -116,6 +123,18 @@ async function main() {
   }
 
   const feedbackPrompt = args.feedback ? String(args.feedback).trim() : null;
+  const direction = args.direction ? String(args.direction).trim() : null;
+  const applyDirection = Boolean(args["apply-direction"]);
+  if (feedbackPrompt && direction) {
+    throw new Error("Use either --feedback or --direction, not both.");
+  }
+  if (applyDirection && !direction) {
+    throw new Error("Flag --apply-direction requires --direction.");
+  }
+
+  const isDirectionProposalOnly = Boolean(direction && !applyDirection);
+  const shouldWriteMutatedArtifact = Boolean(feedbackPrompt || (direction && applyDirection));
+
   const mode = normalizeMode(args.mode);
   const input = await loadInput(args.input ? String(args.input) : "");
   const runId = args["run-id"] ? String(args["run-id"]) : undefined;
@@ -130,11 +149,12 @@ async function main() {
   );
   const artifactPath = path.resolve(
     pilotRoot,
-    feedbackPrompt ? "artifact.mutated.json" : "artifact.json"
+    shouldWriteMutatedArtifact ? "artifact.mutated.json" : "artifact.json"
   );
+  const shouldWriteSourceSnapshot = Boolean(prompt && shouldWriteMutatedArtifact);
   const sourceArtifactPath = path.resolve(
     pilotRoot,
-    feedbackPrompt && prompt ? "artifact.source.json" : "artifact.json"
+    shouldWriteSourceSnapshot ? "artifact.source.json" : "artifact.json"
   );
   const diagnosticsPath = path.resolve(pilotRoot, "diagnostics.json");
   const runSummaryPath = path.resolve(pilotRoot, "run-summary.json");
@@ -149,6 +169,7 @@ async function main() {
   let sourceArtifact = null;
   let effectiveArtifact = null;
   let diagnostics = null;
+  let proposal = null;
   let mutation = {
     applied: false,
     operationType: null,
@@ -178,32 +199,109 @@ async function main() {
   }
 
   effectiveArtifact = sourceArtifact;
-  if (feedbackPrompt) {
-    const plan = planWorkflowMutation({
-      artifact: sourceArtifact,
-      prompt: feedbackPrompt
-    });
+  if (direction) {
+    proposal = {
+      ...planChefDirection({
+        artifact: sourceArtifact,
+        direction
+      }),
+      applied: false
+    };
+  }
+
+  if (feedbackPrompt || applyDirection) {
+    const mutationPlan = feedbackPrompt
+      ? planWorkflowMutation({
+          artifact: sourceArtifact,
+          prompt: feedbackPrompt
+        })
+      : {
+          planId: `direction.${proposal.proposalId}`,
+          sourceArtifactId: sourceArtifact.artifactId,
+          prompt: `direction:${direction}`,
+          operationType: proposal.operationType,
+          operation: proposal.operation,
+          diagnostics: {
+            plannerVersion: proposal.diagnostics?.plannerVersion ?? "0.1.0",
+            mode: "chef-direction-proposal",
+            warnings: []
+          }
+        };
     const applyResult = applyWorkflowMutation({
       artifact: sourceArtifact,
-      plan
+      plan: mutationPlan
     });
     effectiveArtifact = applyResult.mutatedArtifact;
     mutation = {
       applied: true,
       operationType: applyResult.operationType,
       changeSummary: applyResult.changeSummary,
-      planId: plan.planId
+      planId: mutationPlan.planId
     };
+    if (proposal) {
+      proposal = {
+        ...proposal,
+        applied: true
+      };
+    }
   }
 
   const generatedTools = buildGeneratedToolsFromArtifact(effectiveArtifact);
+  const resolvedSourceArtifactPath = prompt ? sourceArtifactPath : artifactArg;
+  const resolvedEffectiveArtifactPath = isDirectionProposalOnly
+    ? resolvedSourceArtifactPath
+    : artifactPath;
 
-  if (prompt || feedbackPrompt) {
+  if (prompt || feedbackPrompt || applyDirection) {
     await writeJsonFile(sourceArtifactPath, sourceArtifact);
   }
-  await writeJsonFile(artifactPath, effectiveArtifact);
+  if (!isDirectionProposalOnly) {
+    await writeJsonFile(artifactPath, effectiveArtifact);
+  }
   await writeJsonFile(diagnosticsPath, diagnostics);
   await writeJsonFile(toolsPath, generatedTools);
+
+  if (isDirectionProposalOnly) {
+    console.log(JSON.stringify({
+      ok: true,
+      mode,
+      prompt,
+      artifact: artifactArg,
+      feedback: feedbackPrompt,
+      direction,
+      runId: null,
+      status: "proposal_only",
+      diagnostics: {
+        branchMode: diagnostics.branchMode,
+        warnings: diagnostics.warnings
+      },
+      proposal,
+      lineage: {
+        sourceArtifactPath: resolvedSourceArtifactPath,
+        effectiveArtifactPath: resolvedEffectiveArtifactPath,
+        feedbackPrompt,
+        mutation
+      },
+      generatedTools,
+      executedNodeIds: [],
+      paths: {
+        artifactPath: resolvedEffectiveArtifactPath,
+        sourceArtifactPath: resolvedSourceArtifactPath,
+        mutatedArtifactPath: null,
+        diagnosticsPath,
+        runSummaryPath,
+        inspectionPath,
+        replayPath,
+        toolsPath,
+        journalDir
+      },
+      quickStart: {
+        inspect: null,
+        replay: null
+      }
+    }, null, 2));
+    return;
+  }
 
   const journalStore = new FileRunJournalStore({ rootDir: journalDir });
   const runtime = new WorkflowRuntime({
@@ -230,24 +328,26 @@ async function main() {
     prompt,
     artifact: artifactArg,
     feedback: feedbackPrompt,
+    direction,
     runId: runSummary.runId,
     status: runSummary.status,
     diagnostics: {
       branchMode: diagnostics.branchMode,
       warnings: diagnostics.warnings
     },
+    proposal,
     lineage: {
-      sourceArtifactPath: prompt ? sourceArtifactPath : artifactArg,
-      effectiveArtifactPath: artifactPath,
+      sourceArtifactPath: resolvedSourceArtifactPath,
+      effectiveArtifactPath: resolvedEffectiveArtifactPath,
       feedbackPrompt,
       mutation
     },
     generatedTools,
     executedNodeIds: Object.keys(runSummary.nodeResults).sort(),
     paths: {
-      artifactPath,
-      sourceArtifactPath: prompt ? sourceArtifactPath : artifactArg,
-      mutatedArtifactPath: feedbackPrompt ? artifactPath : null,
+      artifactPath: resolvedEffectiveArtifactPath,
+      sourceArtifactPath: resolvedSourceArtifactPath,
+      mutatedArtifactPath: shouldWriteMutatedArtifact ? resolvedEffectiveArtifactPath : null,
       diagnosticsPath,
       runSummaryPath,
       inspectionPath,

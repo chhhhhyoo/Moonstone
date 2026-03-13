@@ -50,6 +50,45 @@ Expected result:
 3. Source artifact file remains unchanged; effective run artifact is written to a new `*.mutated.json` path.
 4. Inspect/replay evidence remains runnable for the feedback run.
 
+## Intent-Level Direction Proposal Loop (PF-POC-017)
+
+Use this when the chef gives outcome direction instead of explicit mutation syntax.
+
+```bash
+npm run poc:pilot -- \
+  --mode mock \
+  --artifact .moonstone/pilot/chef-initial/artifact.json \
+  --direction "After http-1, add a summary step for the operator." \
+  --outdir .moonstone/pilot/chef-direction-proposal
+```
+
+Expected proposal-only result:
+
+1. `status` is `proposal_only`.
+2. `runId` is `null`.
+3. `proposal.operationType` is deterministic (`add_openai_after` for this direction).
+4. No `run-summary.json` is emitted until apply is explicitly confirmed.
+
+Apply the proposal explicitly:
+
+```bash
+npm run poc:pilot -- \
+  --mode mock \
+  --artifact .moonstone/pilot/chef-initial/artifact.json \
+  --direction "After http-1, add a summary step for the operator." \
+  --apply-direction \
+  --input '{"text":"chef-direction-apply"}' \
+  --outdir .moonstone/pilot/chef-direction-apply \
+  --run-id chef-direction-apply-001
+```
+
+Expected apply result:
+
+1. `status` is `completed`.
+2. `proposal.applied` is `true`.
+3. `lineage.effectiveArtifactPath` points to a new `*.mutated.json`.
+4. Source artifact remains byte-unchanged.
+
 ## Direct-Apply Mutation Check (PF-POC-015)
 
 ```bash

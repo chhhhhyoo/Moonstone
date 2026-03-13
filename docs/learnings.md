@@ -288,3 +288,8 @@
 
 - A feedback-driven rerun flow is hard to trust if it does not report which artifact was the source and which artifact was actually executed.
 - Emitting `sourceArtifactPath` + `effectiveArtifactPath` + mutation summary in CLI output makes chef-style review loops reproducible and auditable.
+
+## 2026-03-13: Intent-Driven Mutation Needs A Proposal Gate Before Apply
+
+- Letting natural-language direction auto-apply graph edits collapses review and execution into one opaque step, which is risky even in a CLI-first POC.
+- A proposal-only default with explicit `--apply-direction` keeps lead-chef control intact while preserving deterministic inspect/replay evidence.
