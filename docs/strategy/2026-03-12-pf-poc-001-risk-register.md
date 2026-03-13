@@ -33,7 +33,8 @@
 | POC-027 | Operator actionability can drift if failure codes are not mapped to clear runbook handling, causing triage friction and misuse of direction/apply contracts | medium | medium | Normalize failure-code map in pilot runbook and enforce key error assertions in qualification scenarios | core | done |
 | POC-028 | Lead-chef direction remains low-throughput if every intent requires single-operation micro-prompts, causing orchestration drift and poor n8n-style composition feel | medium | high | Add bounded multi-step direction-pack planning/apply (`then` chain), deterministic ordering, and atomic fail-closed apply semantics with strict qualification evidence | core | done |
 | POC-029 | Direction-pack mode can regress into hard-fail behavior for ambiguous clauses, forcing low-level rewrite cycles and undermining composed chef-direction flow | medium | high | Add deterministic pack-candidate generation for exactly one ambiguous clause and require explicit candidate selection before apply | core | done |
-| POC-030 | Lead-chef flow remains low-signal if high-level intent still needs explicit operation choreography (`then`, per-step verbs), limiting system-led workflow assembly | medium | high | Add bounded intent-to-pack synthesis that decomposes chef-level direction into deterministic multi-operation proposal packs with fail-closed ambiguity handling | core | in_progress |
+| POC-030 | Lead-chef flow remains low-signal if high-level intent still needs explicit operation choreography (`then`, per-step verbs), limiting system-led workflow assembly | medium | high | Add bounded intent-to-pack synthesis that decomposes chef-level direction into deterministic multi-operation proposal packs with fail-closed ambiguity handling | core | done |
+| POC-031 | Intent-synthesized packs can become untrustworthy if operators cannot inspect inferred clauses/signals or if conflict patterns (multi-url/conflicting event intent) are silently accepted | medium | high | Add deterministic synthesis diagnostics payload and explicit fail-closed guardrails for bounded conflict patterns, with strict conformance assertions | core | in_progress |
 
 ## Trigger Conditions
 
@@ -65,6 +66,7 @@
 26. Multi-clause direction apply can corrupt artifact lineage if operations are partially applied before a later clause fails.
 27. Ambiguous clauses inside multi-step direction packs can collapse usability if planner has no bounded candidate-choice path.
 28. Requiring explicit `then` choreography and operation verbs can trap users in low-level authoring, even when intent is clear.
+29. Intent synthesis can reduce operator trust if generated pack rationale is not explicit and conflict intent is not rejected deterministically.
 
 ## Exit Criteria For Risk Closure
 
@@ -98,3 +100,4 @@
 28. POC-028: closed when bounded multi-clause direction packs are proposed/applied deterministically with atomic all-or-none mutation semantics and strict qualification evidence.
 29. POC-029: closed when exactly one ambiguous clause in a direction pack yields deterministic pack candidates with explicit selection-before-apply semantics and strict qualification evidence.
 30. POC-030: closed when bounded high-level chef intent is decomposed into deterministic multi-operation pack proposals without mandatory explicit `then` choreography and qualified under strict verification evidence.
+31. POC-031: closed when synthesized pack diagnostics expose deterministic clause/signal derivation and bounded conflict patterns fail closed under unit + conformance + strict verification evidence.

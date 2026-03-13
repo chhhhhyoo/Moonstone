@@ -7,6 +7,19 @@ import {
   planChefDirectionPackWithChoices
 } from "../../../src/core/poc/ChefDirectionPlanner.mjs";
 
+function expectPlannerErrorCode(fn, expectedCode) {
+  let thrown = null;
+  try {
+    fn();
+  } catch (error) {
+    thrown = error;
+  }
+
+  assert.ok(thrown instanceof Error, "expected planner to throw");
+  const errorWithCode = /** @type {Error & { code?: string }} */ (thrown);
+  assert.equal(errorWithCode.code, expectedCode);
+}
+
 function sampleArtifact() {
   return {
     artifactId: "workflow.chef-direction-sample",
@@ -383,4 +396,60 @@ test("planChefDirectionPackWithChoices synthesizes deterministic pack from high-
   assert.equal(plan.proposalPack.proposals[0].operation.afterNodeId, "http-1");
   assert.equal(plan.proposalPack.proposals[1].operationType, "add_openai_after");
   assert.equal(plan.proposalPack.proposals[1].operation.afterNodeId, "http-2");
+  assert.equal(plan.proposalPack.diagnostics.mode, "chef-intent-pack-v1");
+  assert.equal(plan.proposalPack.diagnostics.synthesisApplied, true);
+  assert.deepEqual(plan.proposalPack.diagnostics.derivedClauses, [
+    "After latest request step, add an API check step using GET https://api.example.com/orders/summary.",
+    "After latest request step, add a summary step for the operator on success."
+  ]);
+  assert.deepEqual(plan.proposalPack.diagnostics.intentSignals, [
+    "http_url:https://api.example.com/orders/summary",
+    "http_intent",
+    "summary_intent",
+    "target:operator"
+  ]);
+  assert.deepEqual(plan.proposalPack.diagnostics.warnings, []);
+});
+
+test("planChefDirectionPackWithChoices keeps explicit pack path non-synthesized even when synthesis flag is enabled", () => {
+  const plan = planChefDirectionPackWithChoices({
+    artifact: sampleArtifact(),
+    direction: [
+      "After http-1, add an API check step using GET https://api.example.com/orders/summary.",
+      "then connect http-2 to openai-success-1 on success."
+    ].join(" "),
+    allowIntentSynthesis: true
+  });
+
+  assert.equal(plan.status, "resolved");
+  assert.ok(plan.proposalPack);
+  assert.equal(plan.proposalPack.diagnostics.mode, "bounded-operation-direction-pack-v1");
+  assert.equal(plan.proposalPack.diagnostics.synthesisApplied, false);
+  assert.deepEqual(plan.proposalPack.diagnostics.derivedClauses, []);
+  assert.deepEqual(plan.proposalPack.diagnostics.intentSignals, []);
+  assert.deepEqual(plan.proposalPack.diagnostics.warnings, []);
+});
+
+test("planChefDirectionPackWithChoices fails closed for multi-url synthesis conflicts", () => {
+  expectPlannerErrorCode(
+    () => planChefDirectionPackWithChoices({
+      artifact: sampleArtifact(),
+      direction:
+        "Please check GET https://api.example.com/orders/summary and GET https://api.example.com/orders/audit and summarize result for the operator.",
+      allowIntentSynthesis: true
+    }),
+    "CHEF_DIRECTION_INTENT_MULTI_URL_CONFLICT"
+  );
+});
+
+test("planChefDirectionPackWithChoices fails closed for conflicting synthesis event intent", () => {
+  expectPlannerErrorCode(
+    () => planChefDirectionPackWithChoices({
+      artifact: sampleArtifact(),
+      direction:
+        "Please check GET https://api.example.com/orders/summary and summarize result on success and on failed.",
+      allowIntentSynthesis: true
+    }),
+    "CHEF_DIRECTION_INTENT_EVENT_CONFLICT"
+  );
 });

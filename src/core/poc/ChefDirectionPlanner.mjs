@@ -117,16 +117,41 @@ function trimTrailingPunctuation(value) {
   return String(value).replace(/[),.;!?]+$/g, "");
 }
 
+function extractUrls(direction) {
+  const matches = String(direction).match(/https?:\/\/[^\s"')]+/gi) ?? [];
+  const uniqueUrls = [];
+  const seen = new Set();
+  for (const rawUrl of matches) {
+    const normalizedUrl = trimTrailingPunctuation(rawUrl);
+    if (!seen.has(normalizedUrl)) {
+      seen.add(normalizedUrl);
+      uniqueUrls.push(normalizedUrl);
+    }
+  }
+  return uniqueUrls;
+}
+
 function stripUrls(direction) {
   return String(direction).replace(/https?:\/\/[^\s"')]+/gi, " ");
 }
 
 function extractUrl(direction) {
-  const match = /\b(https?:\/\/[^\s"')]+)/i.exec(direction);
-  if (!match) {
-    return null;
+  const urls = extractUrls(direction);
+  return urls.length > 0 ? urls[0] : null;
+}
+
+function extractExplicitEvents(direction) {
+  const matches = direction.matchAll(/\bon\s+(always|success|failed)\b/gi);
+  const events = [];
+  const seen = new Set();
+  for (const match of matches) {
+    const event = String(match[1]).toLowerCase();
+    if (!seen.has(event)) {
+      seen.add(event);
+      events.push(event);
+    }
   }
-  return trimTrailingPunctuation(match[1]);
+  return events;
 }
 
 function extractHttpMethod(direction, fallback = "GET") {
@@ -542,16 +567,65 @@ function splitDirectionClauses(direction) {
     .filter((entry) => entry.length > 0);
 }
 
+/**
+ * @param {{
+ *   mode: string,
+ *   synthesisApplied?: boolean,
+ *   derivedClauses?: string[],
+ *   intentSignals?: string[],
+ *   warnings?: string[]
+ * }} input
+ */
+function buildDirectionPackDiagnostics({
+  mode,
+  synthesisApplied = false,
+  derivedClauses = [],
+  intentSignals = [],
+  warnings = []
+}) {
+  return {
+    plannerVersion: "0.1.0",
+    mode,
+    synthesisApplied,
+    derivedClauses: [...derivedClauses],
+    intentSignals: [...intentSignals],
+    warnings: [...warnings]
+  };
+}
+
 function inferIntentPackClauses(direction) {
   if (/\bthen\b/i.test(direction)) {
     return null;
   }
 
-  const clauses = [];
-  const url = extractUrl(direction);
+  const urls = extractUrls(direction);
+  if (urls.length > 1) {
+    fail(
+      "CHEF_DIRECTION_INTENT_MULTI_URL_CONFLICT",
+      "Intent synthesis supports exactly one URL in a single direction."
+    );
+  }
+
+  const explicitEvents = extractExplicitEvents(direction);
+  if (explicitEvents.length > 1) {
+    fail(
+      "CHEF_DIRECTION_INTENT_EVENT_CONFLICT",
+      "Intent synthesis supports at most one explicit 'on <event>' intent in a single direction."
+    );
+  }
+
+  const clauses = /** @type {string[]} */ ([]);
+  const intentSignals = /** @type {string[]} */ ([]);
+  const warnings = /** @type {string[]} */ ([]);
+  const url = urls.length > 0 ? urls[0] : null;
+  if (url) {
+    intentSignals.push(`http_url:${url}`);
+  }
+
   const directionWithoutUrl = stripUrls(direction);
   const hasHttpIntent = Boolean(url) && /\b(call|fetch|check|enrich|request|api)\b/i.test(directionWithoutUrl);
   if (hasHttpIntent && url) {
+    intentSignals.push("http_intent");
     const method = extractHttpMethod(direction, "GET");
     clauses.push(`After latest request step, add an API check step using ${method} ${url}.`);
   }
@@ -560,20 +634,40 @@ function inferIntentPackClauses(direction) {
     /\b(failure|failed)\b/i.test(direction) &&
     SUMMARY_INTENT_PATTERN.test(direction);
   if (hasFailureRouteIntent) {
+    intentSignals.push("failure_route_intent");
     clauses.push("Connect latest request step to summary step on failed.");
   }
 
   const hasSummaryIntent = SUMMARY_INTENT_PATTERN.test(direction) || /\b(report|notify)\b/i.test(direction);
+  if (hasSummaryIntent) {
+    intentSignals.push("summary_intent");
+  }
+  if (!SUMMARY_INTENT_PATTERN.test(direction) && /\b(report|notify)\b/i.test(direction)) {
+    warnings.push("SUMMARY_INTENT_INFERRED_FROM_REPORT_NOTIFY");
+  }
   if (hasSummaryIntent && !hasFailureRouteIntent) {
     const event = extractEdgeEvent(direction, "success");
     const target = /\boperator\b/i.test(direction) ? "for the operator" : "for review";
+    intentSignals.push(target === "for the operator" ? "target:operator" : "target:review");
+    if (explicitEvents.length === 1) {
+      intentSignals.push(`event:${explicitEvents[0]}`);
+    }
     clauses.push(`After latest request step, add a summary step ${target} on ${event}.`);
   }
 
   if (clauses.length < 2) {
     return null;
   }
-  return clauses;
+  return {
+    clauses,
+    diagnostics: buildDirectionPackDiagnostics({
+      mode: "chef-intent-pack-v1",
+      synthesisApplied: true,
+      derivedClauses: clauses,
+      intentSignals,
+      warnings
+    })
+  };
 }
 
 function resolveDirectionPackClauses({
@@ -582,18 +676,24 @@ function resolveDirectionPackClauses({
 }) {
   let clauses = splitDirectionClauses(cleanDirection);
   let plannerMode = "bounded-operation-direction-pack-v1";
+  let diagnostics = buildDirectionPackDiagnostics({
+    mode: plannerMode,
+    synthesisApplied: false
+  });
 
   if (clauses.length < 2 && allowIntentSynthesis) {
     const inferred = inferIntentPackClauses(cleanDirection);
-    if (Array.isArray(inferred) && inferred.length > 1) {
-      clauses = inferred;
+    if (inferred && inferred.clauses.length > 1) {
+      clauses = inferred.clauses;
       plannerMode = "chef-intent-pack-v1";
+      diagnostics = inferred.diagnostics;
     }
   }
 
   return {
     clauses,
-    plannerMode
+    plannerMode,
+    diagnostics
   };
 }
 
@@ -651,7 +751,11 @@ function buildDirectionPackProposal({
   cleanDirection,
   clauses,
   proposals,
-  plannerMode = "bounded-operation-direction-pack-v1"
+  plannerMode = "bounded-operation-direction-pack-v1",
+  diagnostics = buildDirectionPackDiagnostics({
+    mode: plannerMode,
+    synthesisApplied: false
+  })
 }) {
   const confidenceValues = proposals.map((entry) => Number(entry.confidence ?? 0));
   const confidence = confidenceValues.length > 0
@@ -671,11 +775,7 @@ function buildDirectionPackProposal({
     proposals,
     ambiguity: "none",
     confidence,
-    diagnostics: {
-      plannerVersion: "0.1.0",
-      mode: plannerMode,
-      warnings: []
-    }
+    diagnostics
   };
 }
 
@@ -691,7 +791,7 @@ export function planChefDirectionPack({ artifact, direction, maxClauses = 3 }) {
   validateWorkflowArtifact(normalizedArtifact);
 
   const cleanDirection = normalizeDirection(direction);
-  const { clauses, plannerMode } = resolveDirectionPackClauses({
+  const { clauses, plannerMode, diagnostics } = resolveDirectionPackClauses({
     cleanDirection,
     allowIntentSynthesis: false
   });
@@ -735,7 +835,8 @@ export function planChefDirectionPack({ artifact, direction, maxClauses = 3 }) {
       cleanDirection,
       clauses,
       proposals,
-      plannerMode
+      plannerMode,
+      diagnostics
     })
   };
 }
@@ -758,7 +859,7 @@ export function planChefDirectionPackWithChoices({
   validateWorkflowArtifact(normalizedArtifact);
 
   const cleanDirection = normalizeDirection(direction);
-  const { clauses, plannerMode } = resolveDirectionPackClauses({
+  const { clauses, plannerMode, diagnostics } = resolveDirectionPackClauses({
     cleanDirection,
     allowIntentSynthesis
   });
@@ -818,7 +919,8 @@ export function planChefDirectionPackWithChoices({
         cleanDirection,
         clauses,
         proposals: prefixProposals,
-        plannerMode
+        plannerMode,
+        diagnostics
       })
     };
   }
@@ -867,7 +969,8 @@ export function planChefDirectionPackWithChoices({
       cleanDirection,
       clauses,
       proposals,
-      plannerMode
+      plannerMode,
+      diagnostics
     });
   });
 
