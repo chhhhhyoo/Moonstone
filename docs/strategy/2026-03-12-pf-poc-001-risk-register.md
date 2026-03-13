@@ -23,7 +23,8 @@
 | POC-017 | Multi-step prompt chains can still be operationally weak if downstream tool calls do not consume upstream outputs deterministically | medium | high | Introduce deterministic upstream-output propagation in synthesized tool chains and enforce with runtime conformance evidence | core | done |
 | POC-018 | Promptable workflow branching can still be superficial if condition parsing is limited to input-only checks and cannot use upstream connector outcomes | medium | high | Add deterministic upstream-status condition inference and qualification for compiler/runtime branch routing | core | done |
 | POC-019 | Promptable automation can regress into unsafe graph edits if mutation prompts are ambiguous or mutation application is not fail-closed | medium | critical | Introduce single-operation deterministic mutation planner/applier with strict invariants, deterministic output contract, and conformance qualification | core | done |
-| POC-020 | Pilot iteration can become non-reproducible if feedback-driven reruns do not preserve artifact lineage and deterministic mutation evidence | medium | high | Add first-class pilot feedback loop contract with mutation summary, source/mutated artifact lineage, and strict conformance coverage | core | in_progress |
+| POC-020 | Pilot iteration can become non-reproducible if feedback-driven reruns do not preserve artifact lineage and deterministic mutation evidence | medium | high | Add first-class pilot feedback loop contract with mutation summary, source/mutated artifact lineage, and strict conformance coverage | core | done |
+| POC-021 | Intent-level chef feedback can produce unsafe or misleading changes if proposal mapping is opaque, non-deterministic, or auto-applies without clear confirmation boundaries | medium | critical | Add deterministic intent-to-proposal planner with explicit confidence/ambiguity diagnostics and apply-confirmation gate | core | in_progress |
 
 ## Trigger Conditions
 
@@ -45,6 +46,7 @@
 16. Prompts that describe branching on connector responses (for example status code checks) cannot be represented if branch conditions are input-only.
 17. Prompt-driven graph mutation can create invalid, unsafe, or non-replayable workflow artifacts when operation intent is ambiguous or insufficiently constrained.
 18. Iterative pilot runs can lose traceability when feedback mutations do not clearly report source artifact and resulting artifact lineage per run.
+19. High-level chef intent without explicit operation verbs can map to wrong mutations if proposal rationale and ambiguity signals are not surfaced before apply.
 
 ## Exit Criteria For Risk Closure
 
@@ -68,3 +70,4 @@
 18. POC-018: closed when status-based upstream branch intent compiles into deterministic condition edges and runtime conformance plus strict verification are green.
 19. POC-019: closed when direct-apply prompt mutation supports deterministic single-operation graph edits with fail-closed validation and strict qualification evidence.
 20. POC-020: closed when pilot feedback loop emits deterministic compile/mutate/rerun lineage evidence and strict qualification gates remain green.
+21. POC-021: closed when intent-level feedback proposes deterministic mutation plans with explicit diagnostics and requires confirmation before apply under strict qualification evidence.

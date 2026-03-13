@@ -3,7 +3,7 @@
 **Milestone**: `PF-POC-016`
 **Execution Branch**: `codex/pf-runtime-030-chef-feedback-loop`
 **Owner**: `core`
-**Status**: `in_progress`
+**Status**: `done`
 **Last Updated**: `2026-03-13`
 
 ## Objective
@@ -58,3 +58,4 @@ This slice advances `VISION.md` by:
 | 2026-03-13 22:19 | Completed REFACTOR docs/spec impact for chef feedback loop and updated operator runbook with iterative mutation workflow. | `docs/workflows/PF-POC-PILOT-promptable-builder.md`, `notes/spec-impact/2026-03-13-pf-poc-016-pilot-feedback-loop.md` |
 | 2026-03-13 22:26 | Completed strict regression gates for PF-POC-016; reran freshness check after strict completion due parallel timing window. | `npm run verify:strict`, `npm run check:verification-fresh` |
 | 2026-03-13 22:37 | Re-ran strict/freshness/strategy/spec/link gates after final log+learning sync so branch evidence remains current for PR handoff. | `npm run verify:strict`, `npm run check:verification-fresh`, `npm run check:strategy`, `npm run check:spec`, `npm run check:links` |
+| 2026-03-13 12:06 | Merged PF-RUNTIME-030 and closed milestone/action/risk tracker set (`PF-POC-016`, `ACT-021`, `POC-020`) before activating PF-POC-017. | `https://github.com/chhhhhyoo/Moonstone/pull/22`, `docs/strategy/MILESTONES.md`, `docs/strategy/FUTURE-ACTIONS.md`, `docs/strategy/2026-03-12-pf-poc-001-risk-register.md` |
