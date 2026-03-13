@@ -263,3 +263,8 @@
 
 - If command payloads retain unresolved templates, inspect timelines under-report actual runtime behavior and hide dataflow correctness issues.
 - Resolving nested payload templates before command emission creates auditable, deterministic operation evidence aligned with execution reality.
+
+## 2026-03-13: Branch Intent Must Include Upstream Outcome Paths To Feel Agentic
+
+- Input-only condition parsing creates a fake ceiling for promptable workflows because users naturally ask for routing on connector outcomes (for example status codes).
+- A deterministic mapping from prompt status conditions to terminal receipt paths (`nodeResults.http-N.result.status`) is a practical midpoint between rigid templates and risky dynamic expression engines.

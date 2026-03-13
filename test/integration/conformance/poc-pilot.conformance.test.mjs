@@ -115,3 +115,56 @@ test("poc:pilot compiles and runs ordered multi-tool prompt in mock mode", async
     await rm(tempRoot, { recursive: true, force: true });
   }
 });
+
+test("poc:pilot routes to upstream-status false branch deterministically in mock mode", async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), "moonstone-poc-pilot-upstream-branch-"));
+  try {
+    const outDir = path.join(tempRoot, "out");
+    const journalDir = path.join(tempRoot, "journal");
+    const runId = "pilot-upstream-branch-001";
+
+    const result = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--prompt",
+      "POST https://api.example.com/orders then if response.status >= 500 summarize error otherwise summarize success",
+      "--input",
+      "{\"text\":\"pilot-upstream-status\"}",
+      "--outdir",
+      outDir,
+      "--journal-dir",
+      journalDir,
+      "--run-id",
+      runId
+    ]);
+
+    const payload = parseJsonOutput(result.stdout, "poc:pilot");
+    assert.equal(payload.ok, true);
+    assert.equal(payload.status, "completed");
+    assert.equal(payload.runId, runId);
+    assert.equal(payload.diagnostics.branchMode, "comparator");
+    assert.deepEqual(payload.executedNodeIds.sort(), ["http-1", "openai-condition-false-1"].sort());
+
+    const artifact = JSON.parse(await readFile(payload.paths.artifactPath, "utf8"));
+    const trueEdge = artifact.edges.find((edge) =>
+      edge.from === "http-1" &&
+      edge.on === "success" &&
+      edge.condition?.path === "nodeResults.http-1.result.status" &&
+      edge.condition?.op === "gte" &&
+      edge.condition?.value === 500
+    );
+    const falseEdge = artifact.edges.find((edge) =>
+      edge.from === "http-1" &&
+      edge.on === "success" &&
+      edge.condition?.path === "nodeResults.http-1.result.status" &&
+      edge.condition?.op === "lt" &&
+      edge.condition?.value === 500
+    );
+
+    assert.ok(trueEdge);
+    assert.ok(falseEdge);
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+});

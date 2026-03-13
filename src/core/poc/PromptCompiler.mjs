@@ -39,6 +39,13 @@ import { normalizeWorkflowArtifact, validateWorkflowArtifact } from "./WorkflowA
  */
 
 /**
+ * @typedef {{
+ *   op: ComparatorOp,
+ *   value: string | number | boolean
+ * }} InferredUpstreamStatusCondition
+ */
+
+/**
  * @typedef {"exists" | "comparator" | "default"} BranchMode
  */
 
@@ -62,15 +69,17 @@ import { normalizeWorkflowArtifact, validateWorkflowArtifact } from "./WorkflowA
 /**
  * @typedef {{
  *   version: string,
-  *   prompt: string,
-  *   branchMode: BranchMode,
-  *   inferred: {
+ *   prompt: string,
+ *   branchMode: BranchMode,
+ *   inferred: {
  *     httpMethod: string,
  *     httpUrl: string,
  *     httpCallCount: number,
  *     hasFailureBranch: boolean,
  *     inputExistsPath: string | null,
- *     inputComparisonCondition: InferredComparatorCondition | null
+ *     inputComparisonCondition: InferredComparatorCondition | null,
+ *     upstreamStatusComparisonCondition: InferredComparatorCondition | null,
+ *     comparisonSource: "input" | "upstream_status" | null
  *   },
  *   warnings: string[],
  *   generatedNodeIds: string[],
@@ -235,11 +244,70 @@ function inferInputComparisonCondition(prompt) {
   };
 }
 
-function inferBranchMode({ inputExistsPath, inputComparisonCondition }) {
+/**
+ * @param {string} prompt
+ * @returns {InferredUpstreamStatusCondition | null}
+ */
+function inferUpstreamStatusComparisonCondition(prompt) {
+  const symbolicMatch = /(?:if|when)\s+(?:(?:response|http|upstream)\s*\.?\s*)?status\s*(==|!=|>=|<=|>|<)\s*("[^"]+"|'[^']+'|[^\s,.;]+)/i.exec(prompt);
+  if (symbolicMatch) {
+    const [, rawOperator, rawValue] = symbolicMatch;
+    /** @type {Record<string, ComparatorOp>} */
+    const operatorMap = {
+      "==": "eq",
+      "!=": "ne",
+      ">": "gt",
+      ">=": "gte",
+      "<": "lt",
+      "<=": "lte"
+    };
+    const mapped = operatorMap[rawOperator];
+    if (!mapped) {
+      return null;
+    }
+    return {
+      op: mapped,
+      value: parseLiteralToken(rawValue)
+    };
+  }
+
+  const verbalMatch = /(?:if|when)\s+(?:(?:response|http|upstream)\s*\.?\s*)?status\s+(is\s+not|not\s+equals?|equals?|is|greater\s+than\s+or\s+equal\s+to|greater\s+than|less\s+than\s+or\s+equal\s+to|less\s+than)\s+("[^"]+"|'[^']+'|[^\s,.;]+)/i.exec(prompt);
+  if (!verbalMatch) {
+    return null;
+  }
+
+  const [, rawOperator, rawValue] = verbalMatch;
+  const normalizedOperator = rawOperator.toLowerCase().replace(/\s+/g, " ").trim();
+
+  /** @type {Record<string, ComparatorOp>} */
+  const operatorMap = {
+    "is": "eq",
+    "equals": "eq",
+    "equal": "eq",
+    "not equal": "ne",
+    "not equals": "ne",
+    "is not": "ne",
+    "greater than": "gt",
+    "greater than or equal to": "gte",
+    "less than": "lt",
+    "less than or equal to": "lte"
+  };
+  const mapped = operatorMap[normalizedOperator];
+  if (!mapped) {
+    return null;
+  }
+
+  return {
+    op: mapped,
+    value: parseLiteralToken(rawValue)
+  };
+}
+
+function inferBranchMode({ inputExistsPath, comparisonCondition }) {
   if (inputExistsPath) {
     return "exists";
   }
-  if (inputComparisonCondition) {
+  if (comparisonCondition) {
     return "comparator";
   }
   return "default";
@@ -257,7 +325,8 @@ function hasConditionalIntent(prompt) {
  *   httpCallCount: number,
  *   hasFailureBranch: boolean,
  *   inputExistsPath: string | null,
- *   inputComparisonCondition: InferredComparatorCondition | null,
+ *   comparisonCondition: InferredComparatorCondition | null,
+ *   comparisonSource: "input" | "upstream_status" | null,
  *   branchMode: BranchMode,
  *   generatedNodeIds: string[],
  *   generatedTools: GeneratedToolBlueprint[]
@@ -271,7 +340,8 @@ function buildCompileDiagnostics({
   httpCallCount,
   hasFailureBranch,
   inputExistsPath,
-  inputComparisonCondition,
+  comparisonCondition,
+  comparisonSource,
   branchMode,
   generatedNodeIds,
   generatedTools
@@ -283,7 +353,7 @@ function buildCompileDiagnostics({
     warnings.push("Conditional intent detected but no supported condition pattern matched; emitted default success branch.");
   }
 
-  if (inputExistsPath && inputComparisonCondition) {
+  if (inputExistsPath && comparisonCondition) {
     warnings.push("Both exists and comparator condition patterns were detected; exists-pattern routing took precedence.");
   }
 
@@ -297,7 +367,9 @@ function buildCompileDiagnostics({
       httpCallCount,
       hasFailureBranch,
       inputExistsPath,
-      inputComparisonCondition
+      inputComparisonCondition: comparisonSource === "input" ? comparisonCondition : null,
+      upstreamStatusComparisonCondition: comparisonSource === "upstream_status" ? comparisonCondition : null,
+      comparisonSource
     },
     warnings,
     generatedNodeIds,
@@ -373,7 +445,7 @@ export function compilePrompt({
   const hasFailureBranch = inferFailureBranch(cleanPrompt);
   const inputExistsPath = inferInputExistsPath(cleanPrompt);
   const inputComparisonCondition = inferInputComparisonCondition(cleanPrompt);
-  const branchMode = inferBranchMode({ inputExistsPath, inputComparisonCondition });
+  const upstreamStatusComparisonCondition = inferUpstreamStatusComparisonCondition(cleanPrompt);
 
   /** @type {WorkflowNodeDraft[]} */
   const nodes = resolvedHttpCalls.map((call, index) => {
@@ -407,6 +479,27 @@ export function compilePrompt({
       }
     };
   });
+
+  const terminalStatusPath = `nodeResults.${terminalHttpNodeId}.result.status`;
+  const comparisonCondition = inputComparisonCondition
+    ? inputComparisonCondition
+    : (
+      upstreamStatusComparisonCondition
+        ? {
+          path: terminalStatusPath,
+          op: upstreamStatusComparisonCondition.op,
+          value: upstreamStatusComparisonCondition.value
+        }
+        : null
+    );
+  const comparisonSource = inputComparisonCondition
+    ? "input"
+    : (
+      upstreamStatusComparisonCondition
+        ? "upstream_status"
+        : null
+    );
+  const branchMode = inferBranchMode({ inputExistsPath, comparisonCondition });
 
   /** @type {WorkflowEdgeDraft[]} */
   const edges = /** @type {WorkflowEdgeDraft[]} */ ([
@@ -467,8 +560,8 @@ export function compilePrompt({
         }
       }
     );
-  } else if (inputComparisonCondition) {
-    const inverseComparator = invertComparator(inputComparisonCondition.op);
+  } else if (comparisonCondition) {
+    const inverseComparator = invertComparator(comparisonCondition.op);
     if (inverseComparator) {
       nodes.push(
         {
@@ -476,7 +569,7 @@ export function compilePrompt({
           type: "action.openai",
           config: {
             model: openaiModel,
-            prompt: `Condition '${inputComparisonCondition.path} ${inputComparisonCondition.op} ${inputComparisonCondition.value}' matched. Summarize workflow result: ${cleanPrompt} | upstream=${upstreamResultReference}`
+            prompt: `Condition '${comparisonCondition.path} ${comparisonCondition.op} ${comparisonCondition.value}' matched. Summarize workflow result: ${cleanPrompt} | upstream=${upstreamResultReference}`
           }
         },
         {
@@ -484,7 +577,7 @@ export function compilePrompt({
           type: "action.openai",
           config: {
             model: openaiModel,
-            prompt: `Condition '${inputComparisonCondition.path} ${inputComparisonCondition.op} ${inputComparisonCondition.value}' did not match. Summarize fallback workflow result: ${cleanPrompt} | upstream=${upstreamResultReference}`
+            prompt: `Condition '${comparisonCondition.path} ${comparisonCondition.op} ${comparisonCondition.value}' did not match. Summarize fallback workflow result: ${cleanPrompt} | upstream=${upstreamResultReference}`
           }
         }
       );
@@ -495,9 +588,9 @@ export function compilePrompt({
           to: "openai-condition-true-1",
           on: "success",
           condition: {
-            path: inputComparisonCondition.path,
-            op: inputComparisonCondition.op,
-            value: inputComparisonCondition.value
+            path: comparisonCondition.path,
+            op: comparisonCondition.op,
+            value: comparisonCondition.value
           }
         },
         {
@@ -505,9 +598,9 @@ export function compilePrompt({
           to: "openai-condition-false-1",
           on: "success",
           condition: {
-            path: inputComparisonCondition.path,
+            path: comparisonCondition.path,
             op: inverseComparator,
-            value: inputComparisonCondition.value
+            value: comparisonCondition.value
           }
         }
       );
@@ -570,7 +663,10 @@ export function compilePrompt({
       compilerHints: {
         hasFailureBranch,
         inputExistsPath,
-        inputComparisonCondition
+        inputComparisonCondition,
+        upstreamStatusComparisonCondition,
+        comparisonCondition,
+        comparisonSource
       }
     }
   };
@@ -587,7 +683,8 @@ export function compilePrompt({
     httpCallCount: resolvedHttpCalls.length,
     hasFailureBranch,
     inputExistsPath,
-    inputComparisonCondition,
+    comparisonCondition,
+    comparisonSource,
     branchMode,
     generatedNodeIds: artifact.nodes.map((node) => node.id),
     generatedTools

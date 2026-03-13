@@ -55,6 +55,23 @@ Expected result:
    - `upstreamSource` (from `http-1` result body source)
    - `upstreamNodeId` (`http-1`)
 
+## Upstream Status Branch Check
+
+```bash
+npm run poc:pilot -- \
+  --mode mock \
+  --prompt "POST https://api.example.com/orders then if response.status >= 500 summarize error otherwise summarize success" \
+  --input '{"text":"upstream-status"}'
+```
+
+Expected result:
+
+1. `diagnostics.branchMode` is `comparator`.
+2. In mock mode (`http` status `200`), `executedNodeIds` includes `openai-condition-false-1` (not `openai-success-1`).
+3. Compiled artifact contains complementary success-edge conditions from `http-1`:
+   - `path: nodeResults.http-1.result.status`, `op: gte`, `value: 500`
+   - `path: nodeResults.http-1.result.status`, `op: lt`, `value: 500`
+
 ## Failure Branch Check
 
 ```bash
@@ -98,3 +115,4 @@ npm run poc:pilot -- \
 3. Rich data transformations between steps beyond deterministic upstream field projection.
 4. Advanced graph authoring (parallelism, loops, human-wait).
 5. UI-level authoring quality comparable to mature no-code products.
+6. Upstream-aware conditional parsing is currently limited to status comparators (not arbitrary upstream body fields).
