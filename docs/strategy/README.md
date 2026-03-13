@@ -32,7 +32,8 @@ This directory stores milestone-level planning, risk tracking, and future action
 21. [PF-POC-019.md](PF-POC-019.md)
 22. [PF-POC-020.md](PF-POC-020.md)
 23. [PF-POC-021.md](PF-POC-021.md)
-24. [PF-GOV-002.md](PF-GOV-002.md)
+24. [PF-POC-022.md](PF-POC-022.md)
+25. [PF-GOV-002.md](PF-GOV-002.md)
 
 ## Superseded Context Docs
 

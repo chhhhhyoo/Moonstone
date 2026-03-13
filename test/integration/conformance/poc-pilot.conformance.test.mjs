@@ -652,3 +652,91 @@ test("poc:pilot returns proposal-choice-required for ambiguous role anchors and 
     await rm(tempRoot, { recursive: true, force: true });
   }
 });
+
+test("poc:pilot supports multi-clause direction pack proposal and atomic apply", async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), "moonstone-poc-pilot-direction-pack-"));
+  try {
+    const initialOutDir = path.join(tempRoot, "initial");
+    const proposalOutDir = path.join(tempRoot, "proposal-pack");
+    const applyOutDir = path.join(tempRoot, "apply-pack");
+    const journalDir = path.join(tempRoot, "journal");
+
+    const initialResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--prompt",
+      "POST https://api.example.com/orders then summarize result",
+      "--input",
+      "{\"text\":\"pilot-direction-pack-initial\"}",
+      "--outdir",
+      initialOutDir,
+      "--journal-dir",
+      journalDir,
+      "--run-id",
+      "pilot-direction-pack-initial-001"
+    ]);
+    const initialPayload = parseJsonOutput(initialResult.stdout, "poc:pilot(initial-direction-pack)");
+    const sourceBeforeRaw = await readFile(initialPayload.paths.artifactPath, "utf8");
+
+    const directionPack = [
+      "After http-1, add an API check step using GET https://api.example.com/orders/summary.",
+      "then connect http-2 to openai-success-1 on success."
+    ].join(" ");
+
+    const proposalResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--artifact",
+      initialPayload.paths.artifactPath,
+      "--direction",
+      directionPack,
+      "--outdir",
+      proposalOutDir,
+      "--journal-dir",
+      journalDir
+    ]);
+    const proposalPayload = parseJsonOutput(proposalResult.stdout, "poc:pilot(direction-pack-proposal)");
+    assert.equal(proposalPayload.ok, true);
+    assert.equal(proposalPayload.status, "proposal_pack_only");
+    assert.equal(proposalPayload.runId, null);
+    assert.equal(proposalPayload.proposal, null);
+    assert.ok(proposalPayload.proposalPack);
+    assert.ok(typeof proposalPayload.proposalPack.packId === "string");
+    assert.equal(proposalPayload.proposalPack.proposals.length, 2);
+    assert.equal(proposalPayload.proposalPack.proposals[0].operationType, "add_http_after");
+    assert.equal(proposalPayload.proposalPack.proposals[1].operationType, "connect_nodes");
+
+    const applyResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--artifact",
+      initialPayload.paths.artifactPath,
+      "--direction",
+      directionPack,
+      "--apply-direction",
+      "--input",
+      "{\"text\":\"pilot-direction-pack-apply\"}",
+      "--outdir",
+      applyOutDir,
+      "--journal-dir",
+      journalDir,
+      "--run-id",
+      "pilot-direction-pack-apply-001"
+    ]);
+    const applyPayload = parseJsonOutput(applyResult.stdout, "poc:pilot(direction-pack-apply)");
+    assert.equal(applyPayload.ok, true);
+    assert.equal(applyPayload.status, "completed");
+    assert.equal(applyPayload.runId, "pilot-direction-pack-apply-001");
+    assert.ok(applyPayload.proposalPack);
+    assert.equal(applyPayload.proposalPack.applied, true);
+    assert.equal(applyPayload.proposalPack.proposals.length, 2);
+
+    const sourceAfterRaw = await readFile(initialPayload.paths.artifactPath, "utf8");
+    assert.equal(sourceAfterRaw, sourceBeforeRaw, "direction-pack apply must not mutate source artifact file");
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+});

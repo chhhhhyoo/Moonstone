@@ -2,7 +2,7 @@ import path from "node:path";
 import { compilePrompt } from "../src/core/poc/PromptCompiler.mjs";
 import { planWorkflowMutation } from "../src/core/poc/WorkflowMutationPlanner.mjs";
 import { applyWorkflowMutation } from "../src/core/poc/WorkflowMutationApplier.mjs";
-import { planChefDirectionWithChoices } from "../src/core/poc/ChefDirectionPlanner.mjs";
+import { planChefDirectionWithChoices, planChefDirectionPack } from "../src/core/poc/ChefDirectionPlanner.mjs";
 import { buildChefDirectionPreview } from "../src/core/poc/ChefDirectionPlannerPreview.mjs";
 import { WorkflowRuntime } from "../src/core/poc/WorkflowRuntime.mjs";
 import { FileRunJournalStore } from "../src/service/poc/FileRunJournalStore.mjs";
@@ -121,6 +121,33 @@ function buildGeneratedToolsFromArtifact(artifact) {
   });
 }
 
+function splitDirectionClauses(direction) {
+  return String(direction ?? "")
+    .split(/\s+\bthen\b\s+/i)
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+}
+
+function buildDirectionMutationPlan({
+  sourceArtifactId,
+  proposal,
+  promptLabel,
+  planId
+}) {
+  return {
+    planId,
+    sourceArtifactId,
+    prompt: promptLabel,
+    operationType: proposal.operationType,
+    operation: proposal.operation,
+    diagnostics: {
+      plannerVersion: proposal.diagnostics?.plannerVersion ?? "0.1.0",
+      mode: "chef-direction-proposal",
+      warnings: []
+    }
+  };
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.artifact === true) {
@@ -161,6 +188,9 @@ async function main() {
   if (selectedProposalId && !applyDirection) {
     fail("CHEF_DIRECTION_PROPOSAL_ID_REQUIRES_APPLY", "Flag --proposal-id requires --apply-direction.");
   }
+  if (selectedProposalId && direction && splitDirectionClauses(direction).length > 1) {
+    fail("CHEF_DIRECTION_PACK_PROPOSAL_ID_UNSUPPORTED", "Direction-pack apply does not accept --proposal-id in v1.");
+  }
 
   const isDirectionProposalOnly = Boolean(direction && !applyDirection);
   const shouldWriteMutatedArtifact = Boolean(feedbackPrompt || (direction && applyDirection));
@@ -200,13 +230,15 @@ async function main() {
   let effectiveArtifact = null;
   let diagnostics = null;
   let proposal = null;
+  let proposalPack = null;
   let proposalCandidates = [];
   let directionPlanStatus = null;
   let mutation = {
     applied: false,
     operationType: null,
     changeSummary: null,
-    planId: null
+    planId: null,
+    operations: null
   };
 
   if (prompt) {
@@ -232,98 +264,148 @@ async function main() {
 
   effectiveArtifact = sourceArtifact;
   if (direction) {
-    const directionPlan = planChefDirectionWithChoices({
-      artifact: sourceArtifact,
-      direction
-    });
-    directionPlanStatus = directionPlan.status;
-
-    if (directionPlan.status === "resolved") {
-      proposal = {
-        ...directionPlan.proposal,
-        preview: buildChefDirectionPreview({
-          artifact: sourceArtifact,
-          proposal: directionPlan.proposal
-        }),
+    const directionClauses = splitDirectionClauses(direction);
+    if (directionClauses.length > 1) {
+      const directionPackPlan = planChefDirectionPack({
+        artifact: sourceArtifact,
+        direction
+      });
+      directionPlanStatus = directionPackPlan.status;
+      proposal = null;
+      proposalCandidates = [];
+      proposalPack = {
+        ...directionPackPlan.proposalPack,
         applied: false
       };
-      proposalCandidates = [];
     } else {
-      proposal = null;
-      proposalCandidates = directionPlan.proposalCandidates.map((candidate) => ({
-        ...candidate,
-        preview: buildChefDirectionPreview({
-          artifact: sourceArtifact,
-          proposal: candidate
-        }),
-        applied: false
-      }));
+      const directionPlan = planChefDirectionWithChoices({
+        artifact: sourceArtifact,
+        direction
+      });
+      directionPlanStatus = directionPlan.status;
+
+      if (directionPlan.status === "resolved") {
+        proposal = {
+          ...directionPlan.proposal,
+          preview: buildChefDirectionPreview({
+            artifact: sourceArtifact,
+            proposal: directionPlan.proposal
+          }),
+          applied: false
+        };
+        proposalCandidates = [];
+      } else {
+        proposal = null;
+        proposalCandidates = directionPlan.proposalCandidates.map((candidate) => ({
+          ...candidate,
+          preview: buildChefDirectionPreview({
+            artifact: sourceArtifact,
+            proposal: candidate
+          }),
+          applied: false
+        }));
+      }
     }
   }
 
   if (feedbackPrompt || applyDirection) {
-    let selectedDirectionProposal = proposal;
-    if (applyDirection && directionPlanStatus === "choice_required") {
-      if (!selectedProposalId) {
-        fail(
-          "CHEF_DIRECTION_PROPOSAL_ID_REQUIRED",
-          "Ambiguous direction requires --proposal-id to select one proposal candidate."
-        );
+    if (applyDirection && proposalPack) {
+      let workingArtifact = sourceArtifact;
+      const operations = [];
+      for (let index = 0; index < proposalPack.proposals.length; index += 1) {
+        const stepProposal = proposalPack.proposals[index];
+        const mutationPlan = buildDirectionMutationPlan({
+          sourceArtifactId: workingArtifact.artifactId,
+          proposal: stepProposal,
+          promptLabel: `direction-pack:${stepProposal.clauseDirection}`,
+          planId: `direction-pack.${proposalPack.packId}.${index + 1}`
+        });
+        const applyResult = applyWorkflowMutation({
+          artifact: workingArtifact,
+          plan: mutationPlan
+        });
+        workingArtifact = applyResult.mutatedArtifact;
+        operations.push({
+          clauseIndex: index + 1,
+          proposalId: stepProposal.proposalId,
+          operationType: applyResult.operationType,
+          changeSummary: applyResult.changeSummary,
+          planId: mutationPlan.planId
+        });
       }
-      selectedDirectionProposal = proposalCandidates.find((candidate) => candidate.proposalId === selectedProposalId) ?? null;
-      if (!selectedDirectionProposal) {
-        fail(
-          "CHEF_DIRECTION_PROPOSAL_ID_UNKNOWN",
-          `Unknown proposal id '${selectedProposalId}' for current direction candidates.`
-        );
-      }
-      proposalCandidates = proposalCandidates.map((candidate) => ({
-        ...candidate,
-        selected: candidate.proposalId === selectedDirectionProposal.proposalId
-      }));
-      proposal = {
-        ...selectedDirectionProposal,
+      effectiveArtifact = workingArtifact;
+      mutation = {
         applied: true,
-        selected: true
+        operationType: "direction_pack",
+        changeSummary: `Applied direction pack '${proposalPack.packId}' with ${operations.length} operation(s).`,
+        planId: `direction-pack.${proposalPack.packId}`,
+        operations
       };
-    }
-    if (applyDirection && !selectedDirectionProposal) {
-      fail("CHEF_DIRECTION_PROPOSAL_MISSING", "Direction apply requires a resolved proposal.");
-    }
-
-    const mutationPlan = feedbackPrompt
-      ? planWorkflowMutation({
-          artifact: sourceArtifact,
-          prompt: feedbackPrompt
-        })
-      : {
-          planId: `direction.${selectedDirectionProposal.proposalId}`,
-          sourceArtifactId: sourceArtifact.artifactId,
-          prompt: `direction:${direction}`,
-          operationType: selectedDirectionProposal.operationType,
-          operation: selectedDirectionProposal.operation,
-          diagnostics: {
-            plannerVersion: selectedDirectionProposal.diagnostics?.plannerVersion ?? "0.1.0",
-            mode: "chef-direction-proposal",
-            warnings: []
-          }
+      proposalPack = {
+        ...proposalPack,
+        applied: true,
+        applySummary: operations
+      };
+    } else {
+      let selectedDirectionProposal = proposal;
+      if (applyDirection && directionPlanStatus === "choice_required") {
+        if (!selectedProposalId) {
+          fail(
+            "CHEF_DIRECTION_PROPOSAL_ID_REQUIRED",
+            "Ambiguous direction requires --proposal-id to select one proposal candidate."
+          );
+        }
+        selectedDirectionProposal = proposalCandidates.find((candidate) => candidate.proposalId === selectedProposalId) ?? null;
+        if (!selectedDirectionProposal) {
+          fail(
+            "CHEF_DIRECTION_PROPOSAL_ID_UNKNOWN",
+            `Unknown proposal id '${selectedProposalId}' for current direction candidates.`
+          );
+        }
+        proposalCandidates = proposalCandidates.map((candidate) => ({
+          ...candidate,
+          selected: candidate.proposalId === selectedDirectionProposal.proposalId
+        }));
+        proposal = {
+          ...selectedDirectionProposal,
+          applied: true,
+          selected: true
         };
-    const applyResult = applyWorkflowMutation({
-      artifact: sourceArtifact,
-      plan: mutationPlan
-    });
-    effectiveArtifact = applyResult.mutatedArtifact;
-    mutation = {
-      applied: true,
-      operationType: applyResult.operationType,
-      changeSummary: applyResult.changeSummary,
-      planId: mutationPlan.planId
-    };
-    if (proposal) {
-      proposal = {
-        ...proposal,
-        applied: true
+      }
+
+      if (applyDirection && !selectedDirectionProposal) {
+        fail("CHEF_DIRECTION_PROPOSAL_MISSING", "Direction apply requires a resolved proposal.");
+      }
+
+      const mutationPlan = feedbackPrompt
+        ? planWorkflowMutation({
+            artifact: sourceArtifact,
+            prompt: feedbackPrompt
+          })
+        : buildDirectionMutationPlan({
+            sourceArtifactId: sourceArtifact.artifactId,
+            proposal: selectedDirectionProposal,
+            promptLabel: `direction:${direction}`,
+            planId: `direction.${selectedDirectionProposal.proposalId}`
+          });
+      const applyResult = applyWorkflowMutation({
+        artifact: sourceArtifact,
+        plan: mutationPlan
+      });
+      effectiveArtifact = applyResult.mutatedArtifact;
+      mutation = {
+        applied: true,
+        operationType: applyResult.operationType,
+        changeSummary: applyResult.changeSummary,
+        planId: mutationPlan.planId,
+        operations: null
       };
+      if (proposal) {
+        proposal = {
+          ...proposal,
+          applied: true
+        };
+      }
     }
   }
 
@@ -343,9 +425,11 @@ async function main() {
   await writeJsonFile(toolsPath, generatedTools);
 
   if (isDirectionProposalOnly) {
-    const proposalOnlyStatus = directionPlanStatus === "choice_required"
-      ? "proposal_choice_required"
-      : "proposal_only";
+    const proposalOnlyStatus = proposalPack
+      ? "proposal_pack_only"
+      : directionPlanStatus === "choice_required"
+        ? "proposal_choice_required"
+        : "proposal_only";
     console.log(JSON.stringify({
       ok: true,
       mode,
@@ -360,6 +444,7 @@ async function main() {
         warnings: diagnostics.warnings
       },
       proposal,
+      proposalPack,
       proposalCandidates,
       lineage: {
         sourceArtifactPath: resolvedSourceArtifactPath,
@@ -421,6 +506,7 @@ async function main() {
       warnings: diagnostics.warnings
     },
     proposal,
+    proposalPack,
     proposalCandidates,
     lineage: {
       sourceArtifactPath: resolvedSourceArtifactPath,

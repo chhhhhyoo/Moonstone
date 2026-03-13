@@ -327,3 +327,9 @@
 - If failure paths print ad hoc stderr text, conformance harnesses cannot qualify fail-closed behavior deterministically.
 - Emit stable JSON failure payloads (`ok/status/error.code/error.message`) on stdout so invalid-direction and invalid-apply scenarios are machine-checkable, reproducible, and operator-legible.
 - Candidate ordering should be human-legible deterministic too: natural node-id sort (`...-2` before `...-10`) avoids review confusion without sacrificing determinism.
+
+## 2026-03-13: Multi-Step Chef Intent Needs Atomic Mutation Semantics
+
+- Supporting multi-clause direction (`then` chain) without atomic apply creates partial-mutation risk that can silently degrade artifact lineage and trust.
+- Pack planning should execute against an evolving in-memory artifact to validate downstream clauses that reference newly introduced nodes.
+- Fail-closed ambiguity in pack mode is preferable to hidden candidate explosion; safer constrained behavior beats pseudo-smart guessing.
