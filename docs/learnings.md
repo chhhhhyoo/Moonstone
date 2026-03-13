@@ -253,3 +253,8 @@
 
 - Runtime `resume` correctness is necessary but insufficient for operator confidence if no first-class CLI contract exists.
 - A crash->`poc:resume`->inspect/replay conformance gate catches integration drift between journal state, connector dispatch, and operator command surfaces.
+
+## 2026-03-13: Promptable Tool Creation Needs Ordered Multi-Step Synthesis To Be Credible
+
+- Showing a generated tool list is not enough if multi-step prompts still collapse to one fixed action node.
+- Deterministic extraction of ordered HTTP calls from prompt text is a practical bridge between rigid templates and fully open-ended tool synthesis.

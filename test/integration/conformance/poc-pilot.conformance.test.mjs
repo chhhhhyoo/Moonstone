@@ -63,3 +63,43 @@ test("poc:pilot compiles and runs prompt workflow in mock mode", async () => {
     await rm(tempRoot, { recursive: true, force: true });
   }
 });
+
+test("poc:pilot compiles and runs ordered multi-tool prompt in mock mode", async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), "moonstone-poc-pilot-multi-tool-"));
+  try {
+    const outDir = path.join(tempRoot, "out");
+    const journalDir = path.join(tempRoot, "journal");
+    const runId = "pilot-multi-tool-001";
+
+    const result = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--prompt",
+      "POST https://api.example.com/orders then GET https://api.example.com/orders/summary then summarize result",
+      "--input",
+      "{\"text\":\"pilot-multi-tool\"}",
+      "--outdir",
+      outDir,
+      "--journal-dir",
+      journalDir,
+      "--run-id",
+      runId
+    ]);
+
+    const payload = parseJsonOutput(result.stdout, "poc:pilot");
+    assert.equal(payload.ok, true);
+    assert.equal(payload.status, "completed");
+    assert.equal(payload.runId, runId);
+    assert.deepEqual(payload.executedNodeIds.sort(), ["http-1", "http-2", "openai-success-1"].sort());
+
+    const httpTools = payload.generatedTools.filter((tool) => tool.connectorType === "action.http");
+    assert.equal(httpTools.length, 2);
+    assert.deepEqual(httpTools.map((tool) => tool.nodeId), ["http-1", "http-2"]);
+
+    const artifact = JSON.parse(await readFile(payload.paths.artifactPath, "utf8"));
+    assert.deepEqual(artifact.nodes.map((node) => node.id), ["http-1", "http-2", "openai-success-1"]);
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+});
