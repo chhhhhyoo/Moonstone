@@ -30,6 +30,28 @@
     "expectApply": false
   },
   {
+    "id": "intent-dual-event-synthesis",
+    "prompt": "POST https://api.example.com/orders then summarize result",
+    "direction": "Please check GET https://api.example.com/orders/summary and summarize result on success and on failed.",
+    "expectedProposalStatus": "proposal_pack_only",
+    "expectedDiagnosticsMode": "chef-intent-pack-v1",
+    "expectedSynthesisApplied": true,
+    "expectedDerivedClauses": [
+      "After latest request step, add an API check step using GET https://api.example.com/orders/summary.",
+      "After latest request step, add a summary step for review on success.",
+      "After latest request step, add a summary step for review on failed."
+    ],
+    "expectedIntentSignals": [
+      "http_url:https://api.example.com/orders/summary",
+      "http_intent",
+      "summary_intent",
+      "event:success",
+      "event:failed",
+      "target:review"
+    ],
+    "expectApply": true
+  },
+  {
     "id": "intent-multi-url-conflict",
     "prompt": "POST https://api.example.com/orders then summarize result",
     "direction": "Please check GET https://api.example.com/orders/summary and GET https://api.example.com/orders/audit and summarize result for the operator.",
@@ -38,7 +60,7 @@
   {
     "id": "intent-event-conflict",
     "prompt": "POST https://api.example.com/orders then summarize result",
-    "direction": "Please check GET https://api.example.com/orders/summary and summarize result on success and on failed.",
+    "direction": "Please check GET https://api.example.com/orders/summary and summarize result on success and on always.",
     "expectedProposalErrorCode": "CHEF_DIRECTION_INTENT_EVENT_CONFLICT"
   },
   {

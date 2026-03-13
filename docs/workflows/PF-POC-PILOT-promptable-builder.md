@@ -341,8 +341,9 @@ Intent synthesis limits (v1):
 
 1. bounded intent phrases only (HTTP check/enrichment + summary/report + failure-route patterns),
 2. synthesized packs remain capped at `2-3` operations,
-3. unsupported vague intent still fails closed with `CHEF_DIRECTION_UNSUPPORTED`,
-4. all synthesized packs still use the same pack apply safety contracts (atomic apply + inspect/replay continuity).
+3. explicit dual-event summary intent is supported when bounded to `on success` + `on failed`,
+4. unsupported vague intent still fails closed with `CHEF_DIRECTION_UNSUPPORTED`,
+5. all synthesized packs still use the same pack apply safety contracts (atomic apply + inspect/replay continuity).
 
 ## Intent-Synthesis Explainability + Safety Guardrails (PF-POC-025)
 
@@ -364,8 +365,28 @@ Fail-closed synthesis guardrails:
    - trigger: one synthesized direction contains multiple URLs
    - action: split into explicit `then` clauses or keep one URL per direction
 2. `CHEF_DIRECTION_INTENT_EVENT_CONFLICT`:
-   - trigger: one synthesized direction mixes conflicting explicit event hints (for example `on success` + `on failed`)
-   - action: keep one explicit `on <event>` per direction or split into separate directions
+   - trigger: one synthesized direction mixes incompatible explicit event hints (for example `on success` + `on always`, or dual-event hints combined with route/send failure phrasing)
+   - action: use a single explicit event, or use only the bounded dual pair (`on success` + `on failed`) without additional conflicting event hints
+
+## Dual-Event Intent Synthesis (PF-POC-027)
+
+Use this to synthesize one high-level direction into both success and failed review clauses.
+
+```bash
+npm run poc:pilot -- \
+  --mode mock \
+  --artifact .moonstone/pilot/chef-initial/artifact.json \
+  --direction "Please check GET https://api.example.com/orders/summary and summarize result on success and on failed." \
+  --outdir .moonstone/pilot/chef-intent-dual-event-proposal
+```
+
+Expected proposal contract:
+
+1. `status` is `proposal_pack_only`.
+2. `proposalPack.proposals[]` includes deterministic event-specific summary mutations:
+   - one summary clause on `success`,
+   - one summary clause on `failed`.
+3. incompatible event mixes (for example `on success` + `on always`) fail closed with `CHEF_DIRECTION_INTENT_EVENT_CONFLICT`.
 
 ## Intent-Synthesis Qualification Gate (PF-POC-026)
 

@@ -607,10 +607,14 @@ function inferIntentPackClauses(direction) {
   }
 
   const explicitEvents = extractExplicitEvents(direction);
-  if (explicitEvents.length > 1) {
+  const explicitEventSet = new Set(explicitEvents);
+  const hasDualSummaryEvents = explicitEventSet.has("success")
+    && explicitEventSet.has("failed")
+    && explicitEventSet.size === 2;
+  if (explicitEvents.length > 1 && !hasDualSummaryEvents) {
     fail(
       "CHEF_DIRECTION_INTENT_EVENT_CONFLICT",
-      "Intent synthesis supports at most one explicit 'on <event>' intent in a single direction."
+      "Intent synthesis supports one explicit 'on <event>' intent, or the bounded pair 'on success' + 'on failed'."
     );
   }
 
@@ -633,6 +637,12 @@ function inferIntentPackClauses(direction) {
   const hasFailureRouteIntent = /\b(route|send)\b/i.test(direction) &&
     /\b(failure|failed)\b/i.test(direction) &&
     SUMMARY_INTENT_PATTERN.test(direction);
+  if (hasFailureRouteIntent && hasDualSummaryEvents) {
+    fail(
+      "CHEF_DIRECTION_INTENT_EVENT_CONFLICT",
+      "Intent synthesis cannot combine route/send failure phrasing with explicit dual-event summary intent."
+    );
+  }
   if (hasFailureRouteIntent) {
     intentSignals.push("failure_route_intent");
     clauses.push("Connect latest request step to summary step on failed.");
@@ -646,13 +656,20 @@ function inferIntentPackClauses(direction) {
     warnings.push("SUMMARY_INTENT_INFERRED_FROM_REPORT_NOTIFY");
   }
   if (hasSummaryIntent && !hasFailureRouteIntent) {
-    const event = extractEdgeEvent(direction, "success");
     const target = /\boperator\b/i.test(direction) ? "for the operator" : "for review";
-    intentSignals.push(target === "for the operator" ? "target:operator" : "target:review");
-    if (explicitEvents.length === 1) {
-      intentSignals.push(`event:${explicitEvents[0]}`);
+    if (hasDualSummaryEvents) {
+      intentSignals.push("event:success", "event:failed");
+      intentSignals.push(target === "for the operator" ? "target:operator" : "target:review");
+      clauses.push(`After latest request step, add a summary step ${target} on success.`);
+      clauses.push(`After latest request step, add a summary step ${target} on failed.`);
+    } else {
+      const event = extractEdgeEvent(direction, "success");
+      intentSignals.push(target === "for the operator" ? "target:operator" : "target:review");
+      if (explicitEvents.length === 1) {
+        intentSignals.push(`event:${explicitEvents[0]}`);
+      }
+      clauses.push(`After latest request step, add a summary step ${target} on ${event}.`);
     }
-    clauses.push(`After latest request step, add a summary step ${target} on ${event}.`);
   }
 
   if (clauses.length < 2) {

@@ -442,12 +442,44 @@ test("planChefDirectionPackWithChoices fails closed for multi-url synthesis conf
   );
 });
 
-test("planChefDirectionPackWithChoices fails closed for conflicting synthesis event intent", () => {
+test("planChefDirectionPackWithChoices synthesizes deterministic dual-event summary clauses for success and failed", () => {
+  const plan = planChefDirectionPackWithChoices({
+    artifact: sampleArtifact(),
+    direction:
+      "Please check GET https://api.example.com/orders/summary and summarize result on success and on failed.",
+    allowIntentSynthesis: true
+  });
+
+  assert.equal(plan.status, "resolved");
+  assert.ok(plan.proposalPack);
+  assert.equal(plan.proposalPack.proposals.length, 3);
+  assert.equal(plan.proposalPack.proposals[0].operationType, "add_http_after");
+  assert.equal(plan.proposalPack.proposals[0].operation.afterNodeId, "http-1");
+  assert.equal(plan.proposalPack.proposals[1].operationType, "add_openai_after");
+  assert.equal(plan.proposalPack.proposals[1].operation.event, "success");
+  assert.equal(plan.proposalPack.proposals[2].operationType, "add_openai_after");
+  assert.equal(plan.proposalPack.proposals[2].operation.event, "failed");
+  assert.deepEqual(plan.proposalPack.diagnostics.derivedClauses, [
+    "After latest request step, add an API check step using GET https://api.example.com/orders/summary.",
+    "After latest request step, add a summary step for review on success.",
+    "After latest request step, add a summary step for review on failed."
+  ]);
+  assert.deepEqual(plan.proposalPack.diagnostics.intentSignals, [
+    "http_url:https://api.example.com/orders/summary",
+    "http_intent",
+    "summary_intent",
+    "event:success",
+    "event:failed",
+    "target:review"
+  ]);
+});
+
+test("planChefDirectionPackWithChoices fails closed for incompatible mixed synthesis events", () => {
   expectPlannerErrorCode(
     () => planChefDirectionPackWithChoices({
       artifact: sampleArtifact(),
       direction:
-        "Please check GET https://api.example.com/orders/summary and summarize result on success and on failed.",
+        "Please check GET https://api.example.com/orders/summary and summarize result on success and on always.",
       allowIntentSynthesis: true
     }),
     "CHEF_DIRECTION_INTENT_EVENT_CONFLICT"

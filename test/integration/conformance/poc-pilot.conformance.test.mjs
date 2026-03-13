@@ -1095,7 +1095,87 @@ test("poc:pilot fails closed with deterministic code for multi-url synthesis con
   }
 });
 
-test("poc:pilot fails closed with deterministic code for conflicting synthesis event intent", async () => {
+test("poc:pilot synthesizes deterministic dual-event summary pack for success and failed intent", async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), "moonstone-poc-pilot-direction-dual-event-"));
+  try {
+    const initialOutDir = path.join(tempRoot, "initial");
+    const proposalOutDir = path.join(tempRoot, "proposal-dual-event");
+    const applyOutDir = path.join(tempRoot, "apply-dual-event");
+    const journalDir = path.join(tempRoot, "journal");
+
+    const initialResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--prompt",
+      "POST https://api.example.com/orders then summarize result",
+      "--input",
+      "{\"text\":\"pilot-direction-dual-event-initial\"}",
+      "--outdir",
+      initialOutDir,
+      "--journal-dir",
+      journalDir,
+      "--run-id",
+      "pilot-direction-dual-event-initial-001"
+    ]);
+    const initialPayload = parseJsonOutput(initialResult.stdout, "poc:pilot(initial-direction-dual-event)");
+
+    const direction = "Please check GET https://api.example.com/orders/summary and summarize result on success and on failed.";
+    const proposalResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--artifact",
+      initialPayload.paths.artifactPath,
+      "--direction",
+      direction,
+      "--outdir",
+      proposalOutDir,
+      "--journal-dir",
+      journalDir
+    ]);
+    const proposalPayload = parseJsonOutput(proposalResult.stdout, "poc:pilot(direction-dual-event-proposal)");
+    assert.equal(proposalPayload.ok, true);
+    assert.equal(proposalPayload.status, "proposal_pack_only");
+    assert.ok(proposalPayload.proposalPack);
+    assert.equal(proposalPayload.proposalPack.proposals.length, 3);
+    assert.equal(proposalPayload.proposalPack.proposals[0].operationType, "add_http_after");
+    assert.equal(proposalPayload.proposalPack.proposals[1].operationType, "add_openai_after");
+    assert.equal(proposalPayload.proposalPack.proposals[1].operation.event, "success");
+    assert.equal(proposalPayload.proposalPack.proposals[2].operationType, "add_openai_after");
+    assert.equal(proposalPayload.proposalPack.proposals[2].operation.event, "failed");
+
+    const applyResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--artifact",
+      initialPayload.paths.artifactPath,
+      "--direction",
+      direction,
+      "--apply-direction",
+      "--input",
+      "{\"text\":\"pilot-direction-dual-event-apply\"}",
+      "--outdir",
+      applyOutDir,
+      "--journal-dir",
+      journalDir,
+      "--run-id",
+      "pilot-direction-dual-event-apply-001"
+    ]);
+    const applyPayload = parseJsonOutput(applyResult.stdout, "poc:pilot(direction-dual-event-apply)");
+    assert.equal(applyPayload.ok, true);
+    assert.equal(applyPayload.status, "completed");
+    assert.equal(applyPayload.runId, "pilot-direction-dual-event-apply-001");
+    assert.ok(applyPayload.proposalPack);
+    assert.equal(applyPayload.proposalPack.proposals.length, 3);
+    assert.equal(applyPayload.proposalPack.applied, true);
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("poc:pilot fails closed with deterministic code for incompatible mixed synthesis event intent", async () => {
   const tempRoot = await mkdtemp(path.join(tmpdir(), "moonstone-poc-pilot-direction-event-conflict-"));
   try {
     const initialOutDir = path.join(tempRoot, "initial");
@@ -1127,7 +1207,7 @@ test("poc:pilot fails closed with deterministic code for conflicting synthesis e
         "--artifact",
         initialPayload.paths.artifactPath,
         "--direction",
-        "Please check GET https://api.example.com/orders/summary and summarize result on success and on failed.",
+        "Please check GET https://api.example.com/orders/summary and summarize result on success and on always.",
         "--outdir",
         proposalOutDir,
         "--journal-dir",

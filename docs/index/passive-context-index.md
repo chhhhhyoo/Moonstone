@@ -136,6 +136,7 @@
 - `notes/spec-impact/2026-03-13-pf-poc-024-chef-intent-pack-synthesis.md`: 2026-03-13 PF-POC-024 Chef Intent Pack Synthesis Impact
 - `notes/spec-impact/2026-03-13-pf-poc-025-intent-synthesis-explainability-guardrails.md`: 2026-03-13 PF-POC-025 Intent-Synthesis Explainability + Safety Guardrails Impact
 - `notes/spec-impact/2026-03-13-pf-poc-026-intent-synthesis-qualification-gate.md`: 2026-03-13 PF-POC-026 Intent-Synthesis Qualification Gate Impact
+- `notes/spec-impact/2026-03-13-pf-poc-027-dual-event-intent-synthesis.md`: 2026-03-13 PF-POC-027 Dual-Event Intent Synthesis Impact
 - `notes/spec-impact/2026-03-13-pf-poc-module-format-decision.md`: 2026-03-13 POC Module Format Decision (MJS Now, TS Slice Later)
 
 ## Documentation Catalog
