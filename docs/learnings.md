@@ -357,3 +357,9 @@
 - Supporting multi-clause direction (`then` chain) without atomic apply creates partial-mutation risk that can silently degrade artifact lineage and trust.
 - Pack planning should execute against an evolving in-memory artifact to validate downstream clauses that reference newly introduced nodes.
 - Fail-closed ambiguity in pack mode is preferable to hidden candidate explosion; safer constrained behavior beats pseudo-smart guessing.
+
+## 2026-03-13: Bound Capability Expansion Beats Blanket Conflict Rules
+
+- Treating every multi-event hint as conflict was safe but product-hostile; it blocked a common automation pattern (`on success` + `on failed`) that chefs naturally ask for.
+- The safer approach is bounded expansion: allow exactly one deterministic dual-event pair, keep everything else fail-closed with explicit conflict codes.
+- Capability should widen only when a dedicated qualification lane exists, so newly-allowed patterns do not silently weaken prior safety guarantees.

@@ -35,7 +35,8 @@
 | POC-029 | Direction-pack mode can regress into hard-fail behavior for ambiguous clauses, forcing low-level rewrite cycles and undermining composed chef-direction flow | medium | high | Add deterministic pack-candidate generation for exactly one ambiguous clause and require explicit candidate selection before apply | core | done |
 | POC-030 | Lead-chef flow remains low-signal if high-level intent still needs explicit operation choreography (`then`, per-step verbs), limiting system-led workflow assembly | medium | high | Add bounded intent-to-pack synthesis that decomposes chef-level direction into deterministic multi-operation proposal packs with fail-closed ambiguity handling | core | done |
 | POC-031 | Intent-synthesized packs can become untrustworthy if operators cannot inspect inferred clauses/signals or if conflict patterns (multi-url/conflicting event intent) are silently accepted | medium | high | Add deterministic synthesis diagnostics payload and explicit fail-closed guardrails for bounded conflict patterns, with strict conformance assertions | core | done |
-| POC-032 | Intent-synthesis behavior can regress silently if synthesized/explicit diagnostic contracts and conflict rejection semantics are not isolated in a dedicated qualification matrix | medium | high | Add fixture-driven intent-synthesis qualification gate with deterministic expected diagnostics/error-code assertions and wire it into strict verification evidence | core | in_progress |
+| POC-032 | Intent-synthesis behavior can regress silently if synthesized/explicit diagnostic contracts and conflict rejection semantics are not isolated in a dedicated qualification matrix | medium | high | Add fixture-driven intent-synthesis qualification gate with deterministic expected diagnostics/error-code assertions and wire it into strict verification evidence | core | done |
+| POC-033 | Lead-chef direction quality can stall if dual-outcome intent (`on success` + `on failed`) is rejected by synthesis, or regress into unsafe guessing when mixed incompatible events are accepted | medium | high | Add deterministic dual-event synthesis decomposition for bounded summary intent and keep explicit fail-closed rejection for mixed invalid event combinations under unit + conformance + strict verification gates | core | in_progress |
 
 ## Trigger Conditions
 
@@ -69,6 +70,7 @@
 28. Requiring explicit `then` choreography and operation verbs can trap users in low-level authoring, even when intent is clear.
 29. Intent synthesis can reduce operator trust if generated pack rationale is not explicit and conflict intent is not rejected deterministically.
 30. Intent-synthesis regressions can evade detection when assertions are embedded in broad pilot tests instead of a dedicated fixture/criteria gate.
+31. Common dual-outcome review intent can be blocked if synthesis treats `on success` + `on failed` as a hard conflict instead of a bounded deterministic synthesis case.
 
 ## Exit Criteria For Risk Closure
 
@@ -104,3 +106,4 @@
 30. POC-030: closed when bounded high-level chef intent is decomposed into deterministic multi-operation pack proposals without mandatory explicit `then` choreography and qualified under strict verification evidence.
 31. POC-031: closed when synthesized pack diagnostics expose deterministic clause/signal derivation and bounded conflict patterns fail closed under unit + conformance + strict verification evidence.
 32. POC-032: closed when a dedicated intent-synthesis qualification matrix enforces synthesized-vs-explicit diagnostics and bounded conflict rejection with deterministic fixture criteria under strict verification.
+33. POC-033: closed when bounded dual-event intent (`success` + `failed`) synthesizes deterministic proposal packs and mixed invalid combinations (for example `always` + `success`) fail closed under strict verification.

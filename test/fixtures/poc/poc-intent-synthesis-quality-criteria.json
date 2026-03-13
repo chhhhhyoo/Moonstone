@@ -1,9 +1,10 @@
 {
   "version": "1.0.0",
-  "minimumScenarioCount": 5,
+  "minimumScenarioCount": 6,
   "requiredScenarioIds": [
     "intent-synthesized-pack-success",
     "intent-explicit-pack-invariance",
+    "intent-dual-event-synthesis",
     "intent-multi-url-conflict",
     "intent-event-conflict",
     "intent-unsupported-vague"
@@ -22,5 +23,5 @@
   ],
   "requiredConflictScenarioCount": 2,
   "requiredUnsupportedScenarioCount": 1,
-  "requiredApplyScenarioCount": 1
+  "requiredApplyScenarioCount": 2
 }
