@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { planChefDirection } from "../../../src/core/poc/ChefDirectionPlanner.mjs";
+import { planChefDirection, planChefDirectionWithChoices } from "../../../src/core/poc/ChefDirectionPlanner.mjs";
 
 function sampleArtifact() {
   return {
@@ -64,6 +64,29 @@ function sampleArtifactWithAmbiguousSummaryRole() {
           prompt: "Summarize {{input.text}} in detail"
         }
       }
+    ]
+  };
+}
+
+function sampleArtifactWithMultipleRequestAndSummaryRoles() {
+  const artifact = sampleArtifactWithAmbiguousSummaryRole();
+  return {
+    ...artifact,
+    nodes: [
+      ...artifact.nodes,
+      {
+        id: "http-2",
+        type: "action.http",
+        config: {
+          url: "https://api.example.com/orders/audit",
+          method: "GET",
+          body: {}
+        }
+      }
+    ],
+    edges: [
+      ...artifact.edges,
+      { from: "http-1", to: "http-2", on: "success" }
     ]
   };
 }
@@ -189,5 +212,31 @@ test("planChefDirection fails closed for ambiguous role resolution", () => {
       direction: "After summary step, add a summary step for the operator."
     }),
     /ambiguous|summary|role/i
+  );
+});
+
+test("planChefDirectionWithChoices returns deterministic candidates for single ambiguous role reference", () => {
+  const plan = planChefDirectionWithChoices({
+    artifact: sampleArtifactWithAmbiguousSummaryRole(),
+    direction: "After summary step, add a summary step for the operator."
+  });
+
+  assert.equal(plan.status, "choice_required");
+  assert.ok(Array.isArray(plan.proposalCandidates));
+  assert.equal(plan.proposalCandidates.length, 2);
+
+  const candidateNodeIds = plan.proposalCandidates.map((entry) => entry.operation.afterNodeId);
+  assert.deepEqual(candidateNodeIds, [...candidateNodeIds].sort());
+  assert.ok(plan.proposalCandidates.every((entry) => typeof entry.proposalId === "string" && entry.proposalId.length > 0));
+  assert.ok(plan.proposalCandidates.every((entry) => Array.isArray(entry.resolvedAnchors) && entry.resolvedAnchors.length > 0));
+});
+
+test("planChefDirectionWithChoices fails closed when direction has multiple ambiguous role references", () => {
+  assert.throws(
+    () => planChefDirectionWithChoices({
+      artifact: sampleArtifactWithMultipleRequestAndSummaryRoles(),
+      direction: "Connect request step to summary step."
+    }),
+    /ambiguous|multiple|role/i
   );
 });

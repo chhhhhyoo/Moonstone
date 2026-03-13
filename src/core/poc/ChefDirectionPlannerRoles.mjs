@@ -47,6 +47,22 @@ function inferSelector(normalizedReference, role) {
 
 /**
  * @param {{
+ *   roleReference: string
+ * }} input
+ */
+export function inspectChefRoleReference({ roleReference }) {
+  const normalizedReference = normalizeRoleReference(roleReference);
+  const role = inferRoleKind(normalizedReference);
+  const selector = inferSelector(normalizedReference, role);
+  return {
+    roleReference: normalizedReference,
+    role,
+    selector
+  };
+}
+
+/**
+ * @param {{
  *   artifact: Record<string, unknown>
  * }} input
  */
@@ -80,22 +96,40 @@ export function buildChefRoleIndex({ artifact }) {
  *   roleReference: string
  * }} input
  */
-export function resolveChefRoleAnchor({ artifact, roleReference }) {
-  const normalizedReference = normalizeRoleReference(roleReference);
-  const role = inferRoleKind(normalizedReference);
-  const selector = inferSelector(normalizedReference, role);
-  const roleIndex = buildChefRoleIndex({ artifact });
-  const candidates = roleIndex[role] ?? [];
-
+export function listChefRoleCandidates({ artifact, roleReference }) {
+  const normalizedArtifact = normalizeWorkflowArtifact(artifact);
+  validateWorkflowArtifact(normalizedArtifact);
+  const inspected = inspectChefRoleReference({ roleReference });
+  const roleIndex = buildChefRoleIndex({ artifact: normalizedArtifact });
+  const candidates = roleIndex[inspected.role] ?? [];
   if (candidates.length === 0) {
     fail("CHEF_ROLE_NO_CANDIDATE", `No candidates found for role reference '${roleReference}'.`);
   }
+  return {
+    roleReference: inspected.roleReference,
+    role: inspected.role,
+    selector: inspected.selector,
+    candidates
+  };
+}
+
+/**
+ * @param {{
+ *   artifact: Record<string, unknown>,
+ *   roleReference: string
+ * }} input
+ */
+export function resolveChefRoleAnchor({ artifact, roleReference }) {
+  const analyzed = listChefRoleCandidates({ artifact, roleReference });
+  const role = analyzed.role;
+  const selector = analyzed.selector;
+  const candidates = analyzed.candidates;
 
   if (selector === "first") {
     return {
       role,
       selector,
-      roleReference: normalizedReference,
+      roleReference: analyzed.roleReference,
       nodeId: candidates[0],
       candidates
     };
@@ -104,7 +138,7 @@ export function resolveChefRoleAnchor({ artifact, roleReference }) {
     return {
       role,
       selector,
-      roleReference: normalizedReference,
+      roleReference: analyzed.roleReference,
       nodeId: candidates[candidates.length - 1],
       candidates
     };
@@ -120,7 +154,7 @@ export function resolveChefRoleAnchor({ artifact, roleReference }) {
   return {
     role,
     selector,
-    roleReference: normalizedReference,
+    roleReference: analyzed.roleReference,
     nodeId: candidates[0],
     candidates
   };

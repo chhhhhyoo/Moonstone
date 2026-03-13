@@ -3,7 +3,7 @@
 **Milestone**: `PF-POC-019`
 **Execution Branch**: `codex/pf-runtime-033-role-based-direction`
 **Owner**: `core`
-**Status**: `in_progress`
+**Status**: `done`
 **Last Updated**: `2026-03-13`
 
 ## Objective
@@ -49,6 +49,7 @@ This slice advances `VISION.md` by:
 2. No multi-operation direction packs.
 3. No automatic conflict resolution when role references are ambiguous.
 4. No in-run self-modifying topology.
+5. No ad-hoc TypeScript source migration inside this slice; runtime module contract stays `.mjs`.
 
 ## TDD Plan (RED -> GREEN -> REFACTOR)
 
@@ -93,3 +94,5 @@ This slice advances `VISION.md` by:
 | 2026-03-13 15:56 | Implemented GREEN role-based anchor inference and planner integration: added deterministic role index/anchor resolver, context-aware role substitution, and `resolvedAnchors` proposal evidence; turned targeted suites green. | `src/core/poc/ChefDirectionPlannerRoles.mjs`, `src/core/poc/ChefDirectionPlanner.mjs`, `test/unit/poc/ChefDirectionPlannerRoles.test.mjs`, `test/unit/poc/ChefDirectionPlanner.test.mjs`, `test/integration/conformance/poc-pilot.conformance.test.mjs`, `node --test test/unit/poc/ChefDirectionPlannerRoles.test.mjs`, `node --test test/unit/poc/ChefDirectionPlanner.test.mjs`, `node --test test/integration/conformance/poc-pilot.conformance.test.mjs` |
 | 2026-03-13 16:05 | Completed REFACTOR sync for PF-POC-019 with role-based runbook guidance, spec-impact capture, and durable learning update. | `docs/workflows/PF-POC-PILOT-promptable-builder.md`, `notes/spec-impact/2026-03-13-pf-poc-019-role-based-anchors.md`, `docs/logs/2026-03-13.md`, `docs/learnings.md` |
 | 2026-03-13 16:13 | Completed strict regression and freshness gates after PF-POC-019 role-anchor implementation and documentation sync. | `npm run lint:fix`, `node --test test/unit/poc/ChefDirectionPlannerRoles.test.mjs`, `node --test test/unit/poc/ChefDirectionPlanner.test.mjs`, `node --test test/integration/conformance/poc-pilot.conformance.test.mjs`, `npm run verify:strict`, `npm run check:verification-fresh`, `npm run check:strategy`, `npm run check:spec` |
+| 2026-03-13 17:02 | Recorded module-format execution decision for active POC work: keep `.mjs` delivery path, reject ad-hoc mixed `.ts`/`.mjs`, defer TS conversion to a dedicated migration slice. | `notes/spec-impact/2026-03-13-pf-poc-module-format-decision.md`, `package.json`, `tsconfig.json`, `docs/logs/2026-03-13.md`, `docs/learnings.md` |
+| 2026-03-13 17:45 | Closed PF-POC-019 after PR #25 merge and activated PF-POC-020 for ambiguity-choice direction flow. | `docs/strategy/MILESTONES.md`, `docs/strategy/FUTURE-ACTIONS.md`, `docs/strategy/2026-03-12-pf-poc-001-risk-register.md`, `docs/strategy/PF-POC-020.md`, `docs/logs/2026-03-13.md` |

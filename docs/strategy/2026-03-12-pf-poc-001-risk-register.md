@@ -26,7 +26,8 @@
 | POC-020 | Pilot iteration can become non-reproducible if feedback-driven reruns do not preserve artifact lineage and deterministic mutation evidence | medium | high | Add first-class pilot feedback loop contract with mutation summary, source/mutated artifact lineage, and strict conformance coverage | core | done |
 | POC-021 | Intent-level chef feedback can produce unsafe or misleading changes if proposal mapping is opaque, non-deterministic, or auto-applies without clear confirmation boundaries | medium | critical | Add deterministic intent-to-proposal planner with explicit confidence/ambiguity diagnostics and apply-confirmation gate | core | done |
 | POC-022 | Broader intent-direction parsing can introduce incorrect graph mutations if operation inference is under-specified or proposal output hides concrete graph delta before apply | medium | critical | Add bounded operation-intent contracts with required hints plus deterministic proposal diff preview and fail-closed rejection on low-confidence/ambiguous directions | core | done |
-| POC-023 | Role-based node anchor inference can silently target wrong nodes when multiple candidates match a natural-language reference (for example “summary step”, “request node”) | medium | critical | Introduce deterministic role-index resolution with explicit ambiguity rejection and qualification matrix for node-id-free direction paths | core | in_progress |
+| POC-023 | Role-based node anchor inference can silently target wrong nodes when multiple candidates match a natural-language reference (for example “summary step”, “request node”) | medium | critical | Introduce deterministic role-index resolution with explicit ambiguity rejection and qualification matrix for node-id-free direction paths | core | done |
+| POC-024 | Hard-failing on role-anchor ambiguity can push users back to implementation-level node IDs and break lead-chef review flow when multiple valid candidates exist | medium | high | Add deterministic proposal-choice contract for exactly one ambiguous role reference, require explicit proposal-id selection for apply, and fail closed on multi-ambiguous references | core | in_progress |
 
 ## Trigger Conditions
 
@@ -51,6 +52,7 @@
 19. High-level chef intent without explicit operation verbs can map to wrong mutations if proposal rationale and ambiguity signals are not surfaced before apply.
 20. Expanding direction planner coverage beyond summary intent can regress safety if inferred operation details are not explicit and previewable before confirmation.
 21. Node-id-free direction phrasing can select wrong graph anchors if role labels are not deterministically resolved with fail-closed ambiguity handling.
+22. Role-anchor ambiguity can degrade user abstraction if planner rejects all candidate paths instead of surfacing deterministic reviewable choices.
 
 ## Exit Criteria For Risk Closure
 
@@ -77,3 +79,4 @@
 21. POC-021: closed when intent-level feedback proposes deterministic mutation plans with explicit diagnostics and requires confirmation before apply under strict qualification evidence.
 22. POC-022: closed when bounded direction-to-operation mappings are qualified per operation type, deterministic proposal diffs are emitted pre-apply, and strict conformance + verification gates remain green.
 23. POC-023: closed when bounded role-based anchor directions resolve deterministically (or fail closed on ambiguity) with conformance and strict verification evidence.
+24. POC-024: closed when single-role ambiguity yields deterministic proposal candidates with explicit proposal-id apply confirmation and multi-ambiguous references still fail closed under strict qualification evidence.

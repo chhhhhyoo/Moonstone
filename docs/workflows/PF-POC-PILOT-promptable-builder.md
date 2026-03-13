@@ -148,9 +148,48 @@ Expected proposal details:
 
 Role resolution safety:
 
-1. If a role has multiple candidates and no disambiguator (`first`/`latest`), planner fails closed.
+1. If exactly one role reference is ambiguous, planner returns `status: proposal_choice_required` with deterministic `proposalCandidates[]`.
 2. Unknown role references fail closed.
 3. Role substitution is context-aware (`after`, `connect ... to ...`, `replace ... with`, `remove leaf ...`) to avoid rewriting operation descriptors accidentally.
+
+## Role-Ambiguity Choice Flow (PF-POC-020)
+
+When one role anchor maps to multiple nodes, use proposal-choice mode and explicitly select one candidate for apply.
+
+```bash
+npm run poc:pilot -- \
+  --mode mock \
+  --artifact .moonstone/pilot/chef-ambiguous/artifact.json \
+  --direction "After summary step, add a summary step for the operator." \
+  --outdir .moonstone/pilot/chef-direction-choice
+```
+
+Expected proposal-choice result:
+
+1. `status` is `proposal_choice_required`.
+2. `proposal` is `null`.
+3. `proposalCandidates[]` is deterministic and sorted by candidate `afterNodeId`.
+4. each candidate includes `proposalId`, `resolvedAnchors`, and `preview`.
+
+Apply with explicit selection:
+
+```bash
+npm run poc:pilot -- \
+  --mode mock \
+  --artifact .moonstone/pilot/chef-ambiguous/artifact.json \
+  --direction "After summary step, add a summary step for the operator." \
+  --apply-direction \
+  --proposal-id "proposal.<from-candidates>" \
+  --input '{"text":"chef-direction-choice-apply"}' \
+  --outdir .moonstone/pilot/chef-direction-choice-apply \
+  --run-id chef-direction-choice-apply-001
+```
+
+Safety contract:
+
+1. missing `--proposal-id` on ambiguous apply fails closed with `CHEF_DIRECTION_PROPOSAL_ID_REQUIRED`.
+2. unknown `--proposal-id` fails closed with `CHEF_DIRECTION_PROPOSAL_ID_UNKNOWN`.
+3. directions with multiple ambiguous role references fail closed (`CHEF_DIRECTION_MULTI_ROLE_AMBIGUOUS`).
 
 ## Direct-Apply Mutation Check (PF-POC-015)
 
