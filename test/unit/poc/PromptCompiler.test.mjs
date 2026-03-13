@@ -209,3 +209,29 @@ test("compilePrompt emits ordered multi-http chain when prompt includes multiple
   assert.equal(httpTools.length, 2);
   assert.deepEqual(httpTools.map((tool) => tool.nodeId), ["http-1", "http-2"]);
 });
+
+test("compilePromptToArtifact emits upstream-status comparator branches against terminal HTTP node result", () => {
+  const artifact = compilePromptToArtifact({
+    prompt: "POST https://api.example.com/orders then GET https://api.example.com/orders/summary then if response.status >= 500 summarize error otherwise summarize success",
+    now: FIXED_NOW
+  });
+
+  const trueEdge = artifact.edges.find((edge) =>
+    edge.from === "http-2" &&
+    edge.on === "success" &&
+    edge.condition?.path === "nodeResults.http-2.result.status" &&
+    edge.condition?.op === "gte" &&
+    edge.condition?.value === 500
+  );
+  const falseEdge = artifact.edges.find((edge) =>
+    edge.from === "http-2" &&
+    edge.on === "success" &&
+    edge.condition?.path === "nodeResults.http-2.result.status" &&
+    edge.condition?.op === "lt" &&
+    edge.condition?.value === 500
+  );
+
+  assert.ok(trueEdge);
+  assert.ok(falseEdge);
+  assert.notEqual(trueEdge.to, falseEdge.to);
+});

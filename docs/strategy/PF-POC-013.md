@@ -3,7 +3,7 @@
 **Milestone**: `PF-POC-013`
 **Execution Branch**: `codex/pf-runtime-027-dataflow-propagation`
 **Owner**: `core`
-**Status**: `in_progress`
+**Status**: `done`
 **Last Updated**: `2026-03-13`
 
 ## Objective
@@ -47,3 +47,4 @@ Upgrade multi-tool prompt synthesis from ordered execution only to deterministic
 | 2026-03-13 16:04 | Updated pilot runbook expectations for command-level upstream dataflow fields in multi-tool chains. | `docs/workflows/PF-POC-PILOT-promptable-builder.md` |
 | 2026-03-13 16:09 | Completed strict verification and freshness evidence with upstream dataflow contract included in canonical conformance route. | `npm run verify:strict`, `npm run check:verification-fresh` |
 | 2026-03-13 16:13 | Opened PF-RUNTIME-027 implementation PR for deterministic upstream dataflow qualification slice with required governance template and evidence. | `https://github.com/chhhhhyoo/Moonstone/pull/19` |
+| 2026-03-13 17:40 | Merged PF-RUNTIME-027 and closed PF-POC-013 action/risk scope (`ACT-018`, `POC-017`) with tracker refresh complete. | `https://github.com/chhhhhyoo/Moonstone/pull/19`, `docs/strategy/MILESTONES.md`, `docs/strategy/FUTURE-ACTIONS.md`, `docs/strategy/2026-03-12-pf-poc-001-risk-register.md` |

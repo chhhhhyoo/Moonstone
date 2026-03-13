@@ -6,6 +6,11 @@ This document is the canonical naming and review-quality policy for Moonstone br
 
 Companion operational rulebook: `docs/governance/RULE.md`.
 
+Quick execution reference for branch/PR lifecycle now lives in:
+
+1. `docs/governance/RULE.md` -> `## Branch And PR Lifecycle (Reference Contract)`
+2. `docs/governance/RULE.md` -> `## Plan Discipline (Mandatory)`
+
 ## Canonical Rules
 
 1. Branch pattern (required): `codex/pf-<stream>-<id>-<slug>`
