@@ -34,6 +34,12 @@ function toErrorPayload(error) {
   };
 }
 
+function errorCodeOf(error) {
+  return error && typeof error === "object" && "code" in error && error.code
+    ? String(error.code)
+    : "";
+}
+
 function slugify(input) {
   return String(input)
     .toLowerCase()
@@ -288,34 +294,73 @@ async function main() {
         }));
       }
     } else {
-      const directionPlan = planChefDirectionWithChoices({
-        artifact: sourceArtifact,
-        direction
-      });
-      directionPlanStatus = directionPlan.status;
-
-      if (directionPlan.status === "resolved") {
-        proposal = {
-          ...directionPlan.proposal,
-          preview: buildChefDirectionPreview({
-            artifact: sourceArtifact,
-            proposal: directionPlan.proposal
-          }),
-          applied: false
-        };
-        proposalCandidates = [];
-      } else {
-        proposal = null;
-        proposalCandidates = directionPlan.proposalCandidates.map((candidate) => ({
-          ...candidate,
-          preview: buildChefDirectionPreview({
-            artifact: sourceArtifact,
-            proposal: candidate
-          }),
-          applied: false
-        }));
+      let directionPlan = null;
+      let directionPlanError = null;
+      try {
+        directionPlan = planChefDirectionWithChoices({
+          artifact: sourceArtifact,
+          direction
+        });
+      } catch (error) {
+        directionPlanError = error;
       }
-      proposalPackCandidates = [];
+
+      if (directionPlan) {
+        directionPlanStatus = directionPlan.status;
+        if (directionPlan.status === "resolved") {
+          proposal = {
+            ...directionPlan.proposal,
+            preview: buildChefDirectionPreview({
+              artifact: sourceArtifact,
+              proposal: directionPlan.proposal
+            }),
+            applied: false
+          };
+          proposalCandidates = [];
+        } else {
+          proposal = null;
+          proposalCandidates = directionPlan.proposalCandidates.map((candidate) => ({
+            ...candidate,
+            preview: buildChefDirectionPreview({
+              artifact: sourceArtifact,
+              proposal: candidate
+            }),
+            applied: false
+          }));
+        }
+        proposalPackCandidates = [];
+      } else if (errorCodeOf(directionPlanError) === "CHEF_DIRECTION_UNSUPPORTED") {
+        try {
+          const synthesizedPackPlan = planChefDirectionPackWithChoices({
+            artifact: sourceArtifact,
+            direction,
+            allowIntentSynthesis: true
+          });
+          directionPlanStatus = synthesizedPackPlan.status;
+          proposal = null;
+          proposalCandidates = [];
+          if (synthesizedPackPlan.status === "resolved") {
+            proposalPack = {
+              ...synthesizedPackPlan.proposalPack,
+              applied: false
+            };
+            proposalPackCandidates = [];
+          } else {
+            proposalPack = null;
+            proposalPackCandidates = synthesizedPackPlan.proposalPackCandidates.map((candidate) => ({
+              ...candidate,
+              applied: false
+            }));
+          }
+        } catch (synthError) {
+          if (errorCodeOf(synthError) === "CHEF_DIRECTION_PACK_REQUIRED") {
+            throw directionPlanError;
+          }
+          throw synthError;
+        }
+      } else {
+        throw directionPlanError;
+      }
     }
   }
 

@@ -542,6 +542,61 @@ function splitDirectionClauses(direction) {
     .filter((entry) => entry.length > 0);
 }
 
+function inferIntentPackClauses(direction) {
+  if (/\bthen\b/i.test(direction)) {
+    return null;
+  }
+
+  const clauses = [];
+  const url = extractUrl(direction);
+  const directionWithoutUrl = stripUrls(direction);
+  const hasHttpIntent = Boolean(url) && /\b(call|fetch|check|enrich|request|api)\b/i.test(directionWithoutUrl);
+  if (hasHttpIntent && url) {
+    const method = extractHttpMethod(direction, "GET");
+    clauses.push(`After latest request step, add an API check step using ${method} ${url}.`);
+  }
+
+  const hasFailureRouteIntent = /\b(route|send)\b/i.test(direction) &&
+    /\b(failure|failed)\b/i.test(direction) &&
+    SUMMARY_INTENT_PATTERN.test(direction);
+  if (hasFailureRouteIntent) {
+    clauses.push("Connect latest request step to summary step on failed.");
+  }
+
+  const hasSummaryIntent = SUMMARY_INTENT_PATTERN.test(direction) || /\b(report|notify)\b/i.test(direction);
+  if (hasSummaryIntent && !hasFailureRouteIntent) {
+    const event = extractEdgeEvent(direction, "success");
+    const target = /\boperator\b/i.test(direction) ? "for the operator" : "for review";
+    clauses.push(`After latest request step, add a summary step ${target} on ${event}.`);
+  }
+
+  if (clauses.length < 2) {
+    return null;
+  }
+  return clauses;
+}
+
+function resolveDirectionPackClauses({
+  cleanDirection,
+  allowIntentSynthesis
+}) {
+  let clauses = splitDirectionClauses(cleanDirection);
+  let plannerMode = "bounded-operation-direction-pack-v1";
+
+  if (clauses.length < 2 && allowIntentSynthesis) {
+    const inferred = inferIntentPackClauses(cleanDirection);
+    if (Array.isArray(inferred) && inferred.length > 1) {
+      clauses = inferred;
+      plannerMode = "chef-intent-pack-v1";
+    }
+  }
+
+  return {
+    clauses,
+    plannerMode
+  };
+}
+
 function validateDirectionPackClauses({ clauses, maxClauses }) {
   if (clauses.length < 2) {
     fail(
@@ -595,7 +650,8 @@ function buildDirectionPackProposal({
   artifactId,
   cleanDirection,
   clauses,
-  proposals
+  proposals,
+  plannerMode = "bounded-operation-direction-pack-v1"
 }) {
   const confidenceValues = proposals.map((entry) => Number(entry.confidence ?? 0));
   const confidence = confidenceValues.length > 0
@@ -617,7 +673,7 @@ function buildDirectionPackProposal({
     confidence,
     diagnostics: {
       plannerVersion: "0.1.0",
-      mode: "bounded-operation-direction-pack-v1",
+      mode: plannerMode,
       warnings: []
     }
   };
@@ -635,7 +691,10 @@ export function planChefDirectionPack({ artifact, direction, maxClauses = 3 }) {
   validateWorkflowArtifact(normalizedArtifact);
 
   const cleanDirection = normalizeDirection(direction);
-  const clauses = splitDirectionClauses(cleanDirection);
+  const { clauses, plannerMode } = resolveDirectionPackClauses({
+    cleanDirection,
+    allowIntentSynthesis: false
+  });
   validateDirectionPackClauses({ clauses, maxClauses });
 
   let workingArtifact = normalizedArtifact;
@@ -675,7 +734,8 @@ export function planChefDirectionPack({ artifact, direction, maxClauses = 3 }) {
       artifactId: normalizedArtifact.artifactId,
       cleanDirection,
       clauses,
-      proposals
+      proposals,
+      plannerMode
     })
   };
 }
@@ -684,15 +744,24 @@ export function planChefDirectionPack({ artifact, direction, maxClauses = 3 }) {
  * @param {{
  *   artifact: Record<string, unknown>,
  *   direction: string,
- *   maxClauses?: number
+ *   maxClauses?: number,
+ *   allowIntentSynthesis?: boolean
  * }} input
  */
-export function planChefDirectionPackWithChoices({ artifact, direction, maxClauses = 3 }) {
+export function planChefDirectionPackWithChoices({
+  artifact,
+  direction,
+  maxClauses = 3,
+  allowIntentSynthesis = false
+}) {
   const normalizedArtifact = normalizeWorkflowArtifact(artifact);
   validateWorkflowArtifact(normalizedArtifact);
 
   const cleanDirection = normalizeDirection(direction);
-  const clauses = splitDirectionClauses(cleanDirection);
+  const { clauses, plannerMode } = resolveDirectionPackClauses({
+    cleanDirection,
+    allowIntentSynthesis
+  });
   validateDirectionPackClauses({ clauses, maxClauses });
 
   let prefixArtifact = normalizedArtifact;
@@ -748,7 +817,8 @@ export function planChefDirectionPackWithChoices({ artifact, direction, maxClaus
         artifactId: normalizedArtifact.artifactId,
         cleanDirection,
         clauses,
-        proposals: prefixProposals
+        proposals: prefixProposals,
+        plannerMode
       })
     };
   }
@@ -796,7 +866,8 @@ export function planChefDirectionPackWithChoices({ artifact, direction, maxClaus
       artifactId: normalizedArtifact.artifactId,
       cleanDirection,
       clauses,
-      proposals
+      proposals,
+      plannerMode
     });
   });
 

@@ -302,6 +302,45 @@ Pack ambiguity safety contract:
 3. unknown `--proposal-id` on pack-choice apply fails closed with `CHEF_DIRECTION_PACK_PROPOSAL_ID_UNKNOWN`.
 4. multiple ambiguous clauses fail closed with `CHEF_DIRECTION_PACK_MULTI_AMBIGUOUS`.
 
+## Chef Intent Pack Synthesis (PF-POC-024)
+
+You can now express bounded multi-step intent without explicit `then` choreography.
+
+```bash
+npm run poc:pilot -- \
+  --mode mock \
+  --artifact .moonstone/pilot/chef-initial/artifact.json \
+  --direction "Please check GET https://api.example.com/orders/summary and summarize result for the operator." \
+  --outdir .moonstone/pilot/chef-intent-pack-proposal
+```
+
+Expected proposal contract:
+
+1. `status` is `proposal_pack_only`.
+2. `proposalPack.diagnostics.mode` is `chef-intent-pack-v1`.
+3. `proposalPack.proposals[]` is deterministic and ordered.
+4. source artifact remains unchanged until apply confirmation.
+
+Apply synthesized pack:
+
+```bash
+npm run poc:pilot -- \
+  --mode mock \
+  --artifact .moonstone/pilot/chef-initial/artifact.json \
+  --direction "Please check GET https://api.example.com/orders/summary and summarize result for the operator." \
+  --apply-direction \
+  --input '{"text":"chef-intent-pack-apply"}' \
+  --outdir .moonstone/pilot/chef-intent-pack-apply \
+  --run-id chef-intent-pack-apply-001
+```
+
+Intent synthesis limits (v1):
+
+1. bounded intent phrases only (HTTP check/enrichment + summary/report + failure-route patterns),
+2. synthesized packs remain capped at `2-3` operations,
+3. unsupported vague intent still fails closed with `CHEF_DIRECTION_UNSUPPORTED`,
+4. all synthesized packs still use the same pack apply safety contracts (atomic apply + inspect/replay continuity).
+
 ## Direct-Apply Mutation Check (PF-POC-015)
 
 ```bash
