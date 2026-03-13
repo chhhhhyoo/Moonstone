@@ -168,3 +168,77 @@ test("poc:pilot routes to upstream-status false branch deterministically in mock
     await rm(tempRoot, { recursive: true, force: true });
   }
 });
+
+test("poc:pilot supports artifact-first feedback mutation loop with deterministic lineage evidence", async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), "moonstone-poc-pilot-feedback-loop-"));
+  try {
+    const outDir = path.join(tempRoot, "initial");
+    const secondOutDir = path.join(tempRoot, "feedback");
+    const journalDir = path.join(tempRoot, "journal");
+
+    const initialResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--prompt",
+      "POST https://api.example.com/orders then summarize result",
+      "--input",
+      "{\"text\":\"pilot-feedback-initial\"}",
+      "--outdir",
+      outDir,
+      "--journal-dir",
+      journalDir,
+      "--run-id",
+      "pilot-feedback-initial-001"
+    ]);
+
+    const initialPayload = parseJsonOutput(initialResult.stdout, "poc:pilot(initial)");
+    assert.equal(initialPayload.ok, true);
+    assert.equal(initialPayload.status, "completed");
+    await expectFile(initialPayload.paths.artifactPath);
+
+    const sourceBeforeRaw = await readFile(initialPayload.paths.artifactPath, "utf8");
+    const feedbackPrompt = "add http after http-1 method GET url https://api.example.com/orders/summary on success";
+    const feedbackResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--artifact",
+      initialPayload.paths.artifactPath,
+      "--feedback",
+      feedbackPrompt,
+      "--input",
+      "{\"text\":\"pilot-feedback-revision\"}",
+      "--outdir",
+      secondOutDir,
+      "--journal-dir",
+      journalDir,
+      "--run-id",
+      "pilot-feedback-revision-001"
+    ]);
+
+    const feedbackPayload = parseJsonOutput(feedbackResult.stdout, "poc:pilot(feedback)");
+    assert.equal(feedbackPayload.ok, true);
+    assert.equal(feedbackPayload.status, "completed");
+    assert.equal(feedbackPayload.lineage.feedbackPrompt, feedbackPrompt);
+    assert.equal(feedbackPayload.lineage.mutation.applied, true);
+    assert.equal(feedbackPayload.lineage.mutation.operationType, "add_http_after");
+    assert.equal(feedbackPayload.lineage.sourceArtifactPath, initialPayload.paths.artifactPath);
+    assert.ok(feedbackPayload.lineage.effectiveArtifactPath.endsWith(".mutated.json"));
+
+    await expectFile(feedbackPayload.lineage.effectiveArtifactPath);
+    await expectFile(feedbackPayload.paths.artifactPath);
+
+    const sourceAfterRaw = await readFile(initialPayload.paths.artifactPath, "utf8");
+    assert.equal(sourceAfterRaw, sourceBeforeRaw, "feedback loop must not mutate source artifact file");
+
+    assert.ok(feedbackPayload.executedNodeIds.includes("http-2"));
+    assert.ok(feedbackPayload.executedNodeIds.includes("openai-success-1"));
+
+    const replay = JSON.parse(await readFile(feedbackPayload.paths.replayPath, "utf8"));
+    assert.equal(replay.runId, "pilot-feedback-revision-001");
+    assert.equal(replay.status, "completed");
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+});
