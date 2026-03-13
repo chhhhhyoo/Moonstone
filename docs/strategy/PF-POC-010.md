@@ -3,7 +3,7 @@
 **Milestone**: `PF-POC-010`
 **Execution Branch**: `codex/pf-runtime-025-resume-cli-qualification`
 **Owner**: `core`
-**Status**: `in_progress`
+**Status**: `done`
 **Last Updated**: `2026-03-13`
 
 ## Objective
@@ -50,3 +50,4 @@ Close the operator recovery gap by adding a first-class CLI resume entrypoint an
 | 2026-03-13 14:22 | Updated operator runbook and qualification checklist to include resume CLI gate and troubleshooting path for interrupted runs. | `docs/workflows/PF-POC-008-operator-runbook.md`, `docs/workflows/PF-POC-008-qualification-checklist.md` |
 | 2026-03-13 14:28 | Completed strict verification and freshness evidence with resume CLI qualification included in conformance route. | `npm run verify:strict`, `npm run check:verification-fresh` |
 | 2026-03-13 14:35 | Opened PF-RUNTIME-025 implementation PR for resume CLI qualification slice with required governance template and evidence. | `https://github.com/chhhhhyoo/Moonstone/pull/17` |
+| 2026-03-13 15:10 | Merged PF-RUNTIME-025 and closed PF-POC-010 action/risk scope (`ACT-015`, `POC-014`) with exit criteria satisfied. | `https://github.com/chhhhhyoo/Moonstone/pull/17`, `docs/strategy/MILESTONES.md`, `docs/strategy/FUTURE-ACTIONS.md`, `docs/strategy/2026-03-12-pf-poc-001-risk-register.md` |

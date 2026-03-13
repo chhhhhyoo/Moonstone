@@ -54,12 +54,20 @@ import { normalizeWorkflowArtifact, validateWorkflowArtifact } from "./WorkflowA
 
 /**
  * @typedef {{
+ *   method: string,
+ *   url: string
+ * }} InferredHttpCall
+ */
+
+/**
+ * @typedef {{
  *   version: string,
   *   prompt: string,
   *   branchMode: BranchMode,
   *   inferred: {
  *     httpMethod: string,
  *     httpUrl: string,
+ *     httpCallCount: number,
  *     hasFailureBranch: boolean,
  *     inputExistsPath: string | null,
  *     inputComparisonCondition: InferredComparatorCondition | null
@@ -96,12 +104,25 @@ function trimTrailingPunctuation(url) {
   return String(url).replace(/[),.;!?]+$/g, "");
 }
 
-function inferHttpUrl(prompt) {
-  const match = /\bhttps?:\/\/[^\s"')`]+/i.exec(prompt);
-  if (!match) {
-    return null;
+/**
+ * @param {string} prompt
+ * @param {string} fallbackMethod
+ * @returns {InferredHttpCall[]}
+ */
+function inferHttpCalls(prompt, fallbackMethod) {
+  /** @type {InferredHttpCall[]} */
+  const calls = [];
+  const pattern = /\b(?:(GET|POST|PUT|DELETE|PATCH)\s+)?(https?:\/\/[^\s"')`]+)/gi;
+  let match = pattern.exec(prompt);
+  while (match) {
+    const explicitMethod = String(match[1] ?? "").toUpperCase();
+    calls.push({
+      method: explicitMethod || fallbackMethod,
+      url: trimTrailingPunctuation(match[2])
+    });
+    match = pattern.exec(prompt);
   }
-  return trimTrailingPunctuation(match[0]);
+  return calls;
 }
 
 function inferFailureBranch(prompt) {
@@ -233,6 +254,7 @@ function hasConditionalIntent(prompt) {
  *   cleanPrompt: string,
  *   httpMethod: string,
  *   httpUrl: string,
+ *   httpCallCount: number,
  *   hasFailureBranch: boolean,
  *   inputExistsPath: string | null,
  *   inputComparisonCondition: InferredComparatorCondition | null,
@@ -246,6 +268,7 @@ function buildCompileDiagnostics({
   cleanPrompt,
   httpMethod,
   httpUrl,
+  httpCallCount,
   hasFailureBranch,
   inputExistsPath,
   inputComparisonCondition,
@@ -271,6 +294,7 @@ function buildCompileDiagnostics({
     inferred: {
       httpMethod,
       httpUrl,
+      httpCallCount,
       hasFailureBranch,
       inputExistsPath,
       inputComparisonCondition
@@ -323,45 +347,71 @@ export function compilePrompt({
   }
 
   const slug = slugify(cleanPrompt.split(" ").slice(0, 8).join(" "));
-  const httpMethod = inferHttpMethod(cleanPrompt);
-  const inferredHttpUrl = inferHttpUrl(cleanPrompt);
-  const resolvedHttpUrl = String(httpUrl ?? inferredHttpUrl ?? "https://example.com/api");
+  const inferredDefaultHttpMethod = inferHttpMethod(cleanPrompt);
+  const inferredHttpCalls = inferHttpCalls(cleanPrompt, inferredDefaultHttpMethod);
+  /** @type {InferredHttpCall[]} */
+  const resolvedHttpCalls = inferredHttpCalls.length > 0
+    ? inferredHttpCalls.map((call, index) => (
+      index === 0 && httpUrl
+        ? {
+          method: call.method,
+          url: String(httpUrl)
+        }
+        : call
+    ))
+    : [
+      {
+        method: inferredDefaultHttpMethod,
+        url: String(httpUrl ?? "https://example.com/api")
+      }
+    ];
+  const primaryHttpCall = resolvedHttpCalls[0];
+
+  const terminalHttpNodeId = `http-${resolvedHttpCalls.length}`;
+  const upstreamResultReference = `{{nodeResults.${terminalHttpNodeId}.result.body}}`;
+
   const hasFailureBranch = inferFailureBranch(cleanPrompt);
   const inputExistsPath = inferInputExistsPath(cleanPrompt);
   const inputComparisonCondition = inferInputComparisonCondition(cleanPrompt);
   const branchMode = inferBranchMode({ inputExistsPath, inputComparisonCondition });
 
   /** @type {WorkflowNodeDraft[]} */
-  const nodes = [
-    {
-      id: "http-1",
-      type: "action.http",
-      config: {
-        url: resolvedHttpUrl,
-        method: httpMethod,
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: {
-          prompt: "{{input.text}}"
-        }
+  const nodes = resolvedHttpCalls.map((call, index) => ({
+    id: `http-${index + 1}`,
+    type: "action.http",
+    config: {
+      url: call.url,
+      method: call.method,
+      headers: {
+        "Content-Type": "application/json"
       },
-      retry: {
-        maxAttempts: 2,
-        backoffMs: 200,
-        maxBackoffMs: 1_000
+      body: {
+        prompt: "{{input.text}}"
       }
+    },
+    retry: {
+      maxAttempts: 2,
+      backoffMs: 200,
+      maxBackoffMs: 1_000
     }
-  ];
+  }));
 
   /** @type {WorkflowEdgeDraft[]} */
-  const edges = [
+  const edges = /** @type {WorkflowEdgeDraft[]} */ ([
     {
       from: "trigger",
       to: "http-1",
       on: "always"
     }
-  ];
+  ]);
+
+  for (let index = 1; index < resolvedHttpCalls.length; index += 1) {
+    edges.push({
+      from: `http-${index}`,
+      to: `http-${index + 1}`,
+      on: "success"
+    });
+  }
 
   if (inputExistsPath) {
     nodes.push(
@@ -370,7 +420,7 @@ export function compilePrompt({
         type: "action.openai",
         config: {
           model: openaiModel,
-          prompt: `Input field '${inputExistsPath}' is present. Summarize workflow result: ${cleanPrompt} | upstream={{nodeResults.http-1.result.body}}`
+          prompt: `Input field '${inputExistsPath}' is present. Summarize workflow result: ${cleanPrompt} | upstream=${upstreamResultReference}`
         }
       },
       {
@@ -378,14 +428,14 @@ export function compilePrompt({
         type: "action.openai",
         config: {
           model: openaiModel,
-          prompt: `Input field '${inputExistsPath}' is missing. Summarize default workflow result: ${cleanPrompt} | upstream={{nodeResults.http-1.result.body}}`
+          prompt: `Input field '${inputExistsPath}' is missing. Summarize default workflow result: ${cleanPrompt} | upstream=${upstreamResultReference}`
         }
       }
     );
 
     edges.push(
       {
-        from: "http-1",
+        from: terminalHttpNodeId,
         to: "openai-present-1",
         on: "success",
         condition: {
@@ -395,7 +445,7 @@ export function compilePrompt({
         }
       },
       {
-        from: "http-1",
+        from: terminalHttpNodeId,
         to: "openai-missing-1",
         on: "success",
         condition: {
@@ -414,7 +464,7 @@ export function compilePrompt({
           type: "action.openai",
           config: {
             model: openaiModel,
-            prompt: `Condition '${inputComparisonCondition.path} ${inputComparisonCondition.op} ${inputComparisonCondition.value}' matched. Summarize workflow result: ${cleanPrompt} | upstream={{nodeResults.http-1.result.body}}`
+            prompt: `Condition '${inputComparisonCondition.path} ${inputComparisonCondition.op} ${inputComparisonCondition.value}' matched. Summarize workflow result: ${cleanPrompt} | upstream=${upstreamResultReference}`
           }
         },
         {
@@ -422,14 +472,14 @@ export function compilePrompt({
           type: "action.openai",
           config: {
             model: openaiModel,
-            prompt: `Condition '${inputComparisonCondition.path} ${inputComparisonCondition.op} ${inputComparisonCondition.value}' did not match. Summarize fallback workflow result: ${cleanPrompt} | upstream={{nodeResults.http-1.result.body}}`
+            prompt: `Condition '${inputComparisonCondition.path} ${inputComparisonCondition.op} ${inputComparisonCondition.value}' did not match. Summarize fallback workflow result: ${cleanPrompt} | upstream=${upstreamResultReference}`
           }
         }
       );
 
       edges.push(
         {
-          from: "http-1",
+          from: terminalHttpNodeId,
           to: "openai-condition-true-1",
           on: "success",
           condition: {
@@ -439,7 +489,7 @@ export function compilePrompt({
           }
         },
         {
-          from: "http-1",
+          from: terminalHttpNodeId,
           to: "openai-condition-false-1",
           on: "success",
           condition: {
@@ -456,11 +506,11 @@ export function compilePrompt({
       type: "action.openai",
       config: {
         model: openaiModel,
-        prompt: `Summarize this workflow result for the user: ${cleanPrompt} | upstream={{nodeResults.http-1.result.body}}`
+        prompt: `Summarize this workflow result for the user: ${cleanPrompt} | upstream=${upstreamResultReference}`
       }
     });
     edges.push({
-      from: "http-1",
+      from: terminalHttpNodeId,
       to: "openai-success-1",
       on: "success"
     });
@@ -475,11 +525,13 @@ export function compilePrompt({
         prompt: `The upstream HTTP step failed. Summarize failure context for the user: ${cleanPrompt} | error={{lastReceipt.error}}`
       }
     });
-    edges.push({
-      from: "http-1",
-      to: "openai-failure-1",
-      on: "failed"
-    });
+    for (let index = 0; index < resolvedHttpCalls.length; index += 1) {
+      edges.push({
+        from: `http-${index + 1}`,
+        to: "openai-failure-1",
+        on: "failed"
+      });
+    }
   }
 
   const artifactDraft = {
@@ -518,8 +570,9 @@ export function compilePrompt({
 
   const diagnostics = buildCompileDiagnostics({
     cleanPrompt,
-    httpMethod,
-    httpUrl: resolvedHttpUrl,
+    httpMethod: primaryHttpCall.method,
+    httpUrl: primaryHttpCall.url,
+    httpCallCount: resolvedHttpCalls.length,
     hasFailureBranch,
     inputExistsPath,
     inputComparisonCondition,

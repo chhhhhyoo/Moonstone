@@ -36,6 +36,21 @@ Expected result:
 1. `generatedTools` includes an HTTP tool whose `configSummary` is `POST https://api.example.com/orders`.
 2. Compiled artifact `http-1` node URL uses the same prompt-derived URL unless `--http-url` is explicitly provided.
 
+## Multi-Tool Prompt Chain Check
+
+```bash
+npm run poc:pilot -- \
+  --mode mock \
+  --prompt "POST https://api.example.com/orders then GET https://api.example.com/orders/summary then summarize result" \
+  --input '{"text":"multi-tool"}'
+```
+
+Expected result:
+
+1. `executedNodeIds` includes ordered chain nodes (`http-1`, `http-2`, `openai-success-1`).
+2. `generatedTools` includes two HTTP tool entries (`http-1`, `http-2`) before summary tool output.
+3. Compiled artifact contains sequential success edges (`trigger -> http-1 -> http-2 -> openai-success-1`).
+
 ## Failure Branch Check
 
 ```bash
@@ -75,5 +90,6 @@ npm run poc:pilot -- \
 ## What It Does Not Prove Yet
 
 1. Arbitrary tool creation from free-form prompt (tool catalog is still fixed to HTTP/OpenAI).
-2. Advanced graph authoring (parallelism, loops, human-wait).
-3. UI-level authoring quality comparable to mature no-code products.
+2. Full natural-language intent coverage for complex multi-step tool flows (parser currently expects explicit URL tokens and ordered phrasing).
+3. Advanced graph authoring (parallelism, loops, human-wait).
+4. UI-level authoring quality comparable to mature no-code products.

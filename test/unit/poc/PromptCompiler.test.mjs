@@ -176,3 +176,30 @@ test("compilePrompt infers URL from prompt and emits deterministic generatedTool
 
   assert.deepEqual(artifact.metadata.compilerHints.generatedTools, diagnostics.generatedTools);
 });
+
+test("compilePrompt emits ordered multi-http chain when prompt includes multiple explicit URLs", () => {
+  const { artifact, diagnostics } = compilePrompt({
+    prompt: "POST https://api.example.com/orders then GET https://api.example.com/orders/summary then summarize result",
+    now: FIXED_NOW
+  });
+
+  const nodeIds = artifact.nodes.map((node) => node.id);
+  assert.deepEqual(nodeIds, ["http-1", "http-2", "openai-success-1"]);
+
+  assert.equal(artifact.nodes[0].config.url, "https://api.example.com/orders");
+  assert.equal(artifact.nodes[0].config.method, "POST");
+  assert.equal(artifact.nodes[1].config.url, "https://api.example.com/orders/summary");
+  assert.equal(artifact.nodes[1].config.method, "GET");
+
+  const edgeTrigger = artifact.edges.find((edge) => edge.from === "trigger" && edge.to === "http-1");
+  const edgeChain = artifact.edges.find((edge) => edge.from === "http-1" && edge.to === "http-2" && edge.on === "success");
+  const edgeSummary = artifact.edges.find((edge) => edge.from === "http-2" && edge.to === "openai-success-1" && edge.on === "success");
+
+  assert.ok(edgeTrigger);
+  assert.ok(edgeChain);
+  assert.ok(edgeSummary);
+
+  const httpTools = diagnostics.generatedTools.filter((tool) => tool.connectorType === "action.http");
+  assert.equal(httpTools.length, 2);
+  assert.deepEqual(httpTools.map((tool) => tool.nodeId), ["http-1", "http-2"]);
+});
