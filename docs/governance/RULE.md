@@ -49,11 +49,12 @@ Each section must contain substantive content; empty shells are policy violation
 
 1. Every new implementation branch or materially new approach must have an explicit plan doc before coding begins.
 2. Plan docs must live under `docs/strategy/` (milestone plan such as `PF-POC-*.md` or dated build-plan doc).
-3. Execution must be plan-referenced: each material implementation step must map to a current plan item.
-4. Plan status must be updated continuously during execution (not batch-updated at the end).
-5. Plan update logs must include concrete evidence (commands, tests, or artifacts) so progress is auditable.
-6. After every merge, trackers must be refreshed together: milestone status, linked future action status, and linked risk status.
-7. Activating a next slice requires creating/updating the next plan doc in the same tracker refresh change set.
+3. Execution must be plan-referenced: each material implementation step must map to a current plan item before the step starts.
+4. If a material step is not represented in the active plan, update the plan first, then execute.
+5. Plan status must be updated continuously during execution (not batch-updated at the end).
+6. Immediately after each material step, append a plan update entry with concrete evidence (commands, tests, artifacts, or review references).
+7. After every merge, trackers must be refreshed together: milestone status, linked future action status, and linked risk status.
+8. Activating a next slice requires creating/updating the next plan doc in the same tracker refresh change set.
 
 ## Rejection Triggers
 
@@ -64,6 +65,7 @@ Each section must contain substantive content; empty shells are policy violation
 5. A material branch/approach has no corresponding active plan doc under `docs/strategy/`.
 6. Implementation evidence does not reconcile against plan status updates.
 7. Post-merge tracker refresh does not update milestone + action + risk together.
+8. Material implementation steps were executed without pre-step plan mapping or immediate post-step evidence updates.
 
 ## Change Control
 

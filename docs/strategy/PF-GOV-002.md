@@ -36,3 +36,4 @@ Codify mandatory plan discipline so every new branch/approach has an active plan
 |---|---|---|
 | 2026-03-13 09:35 | Added mandatory plan-discipline section and rejection triggers in RULE.md. | `docs/governance/RULE.md` |
 | 2026-03-13 09:44 | Logged governance change and verified repository integrity under strict gates. | `docs/logs/2026-03-13.md`, `npm run check:links`, `npm run verify:strict`, `npm run check:verification-fresh` |
+| 2026-03-13 10:12 | Tightened plan-discipline clauses to enforce pre-step plan mapping and immediate post-step evidence updates. | `docs/governance/RULE.md` |
