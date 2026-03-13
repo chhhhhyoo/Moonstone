@@ -16,7 +16,8 @@
 | POC-010 | Compile-level quality can mask runtime branch behavior drift if fixtures are not executed through command/receipt path | medium | high | Add compile-to-runtime fixture execution matrix with deterministic outcome assertions under strict verification | core | done |
 | POC-011 | Runtime branch correctness under nominal paths can still fail under connector fault windows and retry exhaustion edges | medium | high | Add fault-injection matrix over compiled fixtures to assert retry/failure-edge/recovery determinism | core | done |
 | POC-012 | Even with green quality gates, adoption can stall without an operator-facing runbook and deterministic demo qualification pack | medium | medium | Build demo-run qualification checklist and operator runbook tied to strict verification evidence | core | done |
-| POC-013 | Webhook ingress can silently break deterministic replay triage when run-id override handling is undefined or untested end-to-end | medium | high | Add webhook E2E qualification matrix with header-based run-id override and replay/inspect continuity assertions | core | in_progress |
+| POC-013 | Webhook ingress can silently break deterministic replay triage when run-id override handling is undefined or untested end-to-end | medium | high | Add webhook E2E qualification matrix with header-based run-id override and replay/inspect continuity assertions | core | done |
+| POC-014 | Interruption recovery can remain operationally brittle when `resume` is runtime-internal only and lacks CLI/operator qualification proof | medium | high | Add first-class `poc:resume` command and crash-recovery qualification matrix tied to strict verification evidence | core | in_progress |
 
 ## Trigger Conditions
 
@@ -31,6 +32,7 @@
 9. Fault-injected runs diverge from expected retry/failure deterministic behavior.
 10. Team cannot reproduce or present POC quality state quickly from CLI evidence.
 11. Webhook-triggered runs cannot be deterministically correlated across trigger response, inspect timeline, and replay output.
+12. Interrupted runs require ad hoc scripts instead of a canonical CLI resume path, increasing recovery variance.
 
 ## Exit Criteria For Risk Closure
 
@@ -47,3 +49,4 @@
 11. POC-011: closed when fault-injection runtime matrix validates retry/failure/recovery outcomes deterministically under strict verification.
 12. POC-012: closed when demo runbook and qualification checklist are executable and mapped to strict verification evidence.
 13. POC-013: closed when webhook E2E qualification validates health, trigger, run-id override, inspect, and replay continuity under strict verification.
+14. POC-014: closed when `poc:resume` is operator-accessible and crash-recovery qualification proves deterministic resume behavior under strict verification.

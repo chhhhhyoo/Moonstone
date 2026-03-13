@@ -3,7 +3,7 @@
 **Milestone**: `PF-POC-009`
 **Execution Branch**: `codex/pf-runtime-021-webhook-e2e-gate`
 **Owner**: `core`
-**Status**: `in_progress`
+**Status**: `done`
 **Last Updated**: `2026-03-13`
 
 ## Objective
@@ -48,3 +48,4 @@ Prove webhook ingress behavior end-to-end with deterministic run-id correlation 
 | 2026-03-13 11:26 | Implemented webhook run-id header override and `poc:serve --run-id-header` plumbing; webhook E2E test turned green. | `src/provider/poc/WebhookServer.mjs`, `scripts/poc-serve.mjs`, `node --test test/integration/conformance/poc-webhook-e2e-qualification.conformance.test.mjs` |
 | 2026-03-13 11:30 | Refactored shared CLI E2E utilities for spawn/poll/JSON parsing and applied to demo + webhook qualification suites. | `test/integration/conformance/helpers/cli-e2e-helpers.mjs`, `test/integration/conformance/poc-demo-runbook-qualification.conformance.test.mjs`, `test/integration/conformance/poc-webhook-e2e-qualification.conformance.test.mjs` |
 | 2026-03-13 11:35 | Completed qualification and strict regression evidence for PF-POC-009 kickoff slice. | `npm run poc:qualify:demo`, `npm run poc:qualify:webhook`, `npm run verify:strict`, `npm run check:verification-fresh` |
+| 2026-03-13 11:50 | Merged PF-RUNTIME-021 PR and closed PF-POC-009 action/risk scope (`ACT-014`, `POC-013`) with exit criteria satisfied. | `https://github.com/chhhhhyoo/Moonstone/pull/12`, `docs/strategy/MILESTONES.md`, `docs/strategy/FUTURE-ACTIONS.md`, `docs/strategy/2026-03-12-pf-poc-001-risk-register.md` |

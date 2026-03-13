@@ -233,3 +233,8 @@
 
 - A webhook route can be healthy while still violating correlation guarantees if run-id override semantics are not tested end-to-end.
 - Health + trigger + inspect + replay must be validated in one gate to prove operator-grade reproducibility.
+
+## 2026-03-13: Post-Merge Tracker Refresh Must Close The Risk/Action Pair, Not Just The Milestone
+
+- Marking only the milestone as done leaves governance drift if linked action/risk IDs remain in-progress.
+- Every merge closure refresh should update milestone, future action, and risk register together before activating the next slice.
