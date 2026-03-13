@@ -368,3 +368,19 @@ test("planChefDirectionPackWithChoices fails closed when multiple clauses are am
     /PACK_MULTI_AMBIGUOUS|multiple|ambiguous|pack/i
   );
 });
+
+test("planChefDirectionPackWithChoices synthesizes deterministic pack from high-level intent without explicit then", () => {
+  const plan = planChefDirectionPackWithChoices({
+    artifact: sampleArtifact(),
+    direction: "Please check GET https://api.example.com/orders/summary and summarize result for the operator.",
+    allowIntentSynthesis: true
+  });
+
+  assert.equal(plan.status, "resolved");
+  assert.ok(plan.proposalPack);
+  assert.equal(plan.proposalPack.proposals.length, 2);
+  assert.equal(plan.proposalPack.proposals[0].operationType, "add_http_after");
+  assert.equal(plan.proposalPack.proposals[0].operation.afterNodeId, "http-1");
+  assert.equal(plan.proposalPack.proposals[1].operationType, "add_openai_after");
+  assert.equal(plan.proposalPack.proposals[1].operation.afterNodeId, "http-2");
+});

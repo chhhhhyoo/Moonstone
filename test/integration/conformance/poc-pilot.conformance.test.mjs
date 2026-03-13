@@ -741,6 +741,88 @@ test("poc:pilot supports multi-clause direction pack proposal and atomic apply",
   }
 });
 
+test("poc:pilot synthesizes proposal pack from high-level intent without explicit then choreography", async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), "moonstone-poc-pilot-direction-intent-pack-"));
+  try {
+    const initialOutDir = path.join(tempRoot, "initial");
+    const proposalOutDir = path.join(tempRoot, "proposal-intent-pack");
+    const applyOutDir = path.join(tempRoot, "apply-intent-pack");
+    const journalDir = path.join(tempRoot, "journal");
+
+    const initialResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--prompt",
+      "POST https://api.example.com/orders then summarize result",
+      "--input",
+      "{\"text\":\"pilot-direction-intent-pack-initial\"}",
+      "--outdir",
+      initialOutDir,
+      "--journal-dir",
+      journalDir,
+      "--run-id",
+      "pilot-direction-intent-pack-initial-001"
+    ]);
+    const initialPayload = parseJsonOutput(initialResult.stdout, "poc:pilot(initial-direction-intent-pack)");
+    const sourceBeforeRaw = await readFile(initialPayload.paths.artifactPath, "utf8");
+
+    const direction = "Please check GET https://api.example.com/orders/summary and summarize result for the operator.";
+
+    const proposalResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--artifact",
+      initialPayload.paths.artifactPath,
+      "--direction",
+      direction,
+      "--outdir",
+      proposalOutDir,
+      "--journal-dir",
+      journalDir
+    ]);
+    const proposalPayload = parseJsonOutput(proposalResult.stdout, "poc:pilot(direction-intent-pack-proposal)");
+    assert.equal(proposalPayload.ok, true);
+    assert.equal(proposalPayload.status, "proposal_pack_only");
+    assert.ok(proposalPayload.proposalPack);
+    assert.equal(proposalPayload.proposalPack.proposals.length, 2);
+    assert.equal(proposalPayload.proposalPack.proposals[0].operationType, "add_http_after");
+    assert.equal(proposalPayload.proposalPack.proposals[1].operationType, "add_openai_after");
+
+    const applyResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--artifact",
+      initialPayload.paths.artifactPath,
+      "--direction",
+      direction,
+      "--apply-direction",
+      "--input",
+      "{\"text\":\"pilot-direction-intent-pack-apply\"}",
+      "--outdir",
+      applyOutDir,
+      "--journal-dir",
+      journalDir,
+      "--run-id",
+      "pilot-direction-intent-pack-apply-001"
+    ]);
+    const applyPayload = parseJsonOutput(applyResult.stdout, "poc:pilot(direction-intent-pack-apply)");
+    assert.equal(applyPayload.ok, true);
+    assert.equal(applyPayload.status, "completed");
+    assert.equal(applyPayload.runId, "pilot-direction-intent-pack-apply-001");
+    assert.ok(applyPayload.proposalPack);
+    assert.equal(applyPayload.proposalPack.applied, true);
+    assert.ok(applyPayload.executedNodeIds.includes("http-2"));
+
+    const sourceAfterRaw = await readFile(initialPayload.paths.artifactPath, "utf8");
+    assert.equal(sourceAfterRaw, sourceBeforeRaw, "intent-pack apply must not mutate source artifact file");
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
 test("poc:pilot returns proposal-pack-choice-required for single ambiguous clause and enforces selection on apply", async () => {
   const tempRoot = await mkdtemp(path.join(tmpdir(), "moonstone-poc-pilot-direction-pack-choice-"));
   try {

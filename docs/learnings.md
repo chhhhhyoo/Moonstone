@@ -265,6 +265,12 @@
 - Bounded candidate-pack generation (exactly one ambiguous clause) keeps UX productive without losing fail-closed safety.
 - Explicit pack selection (`--proposal-id`) is mandatory for trust; silent auto-pick logic undermines reproducibility and auditability.
 
+## 2026-03-13: Intent Synthesis Must Be A Strict Fallback, Not A Silent Override
+
+- High-level direction support should improve abstraction only when primary bounded planner cannot resolve intent safely.
+- Promoting unsupported single-direction intent into deterministic pack synthesis is useful, but only under explicit bounded patterns.
+- If synthesis is not confidently applicable, rethrow the original unsupported error; permissive guessing degrades both trust and debugging.
+
 ## 2026-03-13: Ad-Hoc TS Adoption During POC Delivery Creates Toolchain Drift
 
 - Introducing `.ts` incrementally into a `.mjs`-dominant Node-direct runtime creates a mixed contract that increases debugging and CI ambiguity.
