@@ -29,6 +29,14 @@ npm run poc:qualify:webhook
 
 Webhook acceptance condition: health + trigger + inspect + replay coverage pass with deterministic run-id behavior.
 
+Run resume CLI qualification matrix:
+
+```bash
+npm run poc:qualify:resume
+```
+
+Resume acceptance condition: crash-interrupted run resumes through `poc:resume` with deterministic inspect/replay continuity.
+
 ## Manual Triage Flow
 
 Use this flow when debugging one workflow by hand.
@@ -69,6 +77,12 @@ npm run poc:inspect -- --run-id "demo-branch-001" --journal-dir ".moonstone/poc-
 
 ```bash
 npm run poc:replay -- --run-id "demo-branch-001" --journal-dir ".moonstone/poc-journal"
+```
+
+6. Resume interrupted run from journal (when status remains `running`):
+
+```bash
+npm run poc:resume -- --run-id "demo-branch-001" --journal-dir ".moonstone/poc-journal"
 ```
 
 ## Webhook E2E Flow (Deterministic Run ID)
@@ -115,6 +129,7 @@ npm run poc:replay -- --run-id "webhook-demo-001" --journal-dir ".moonstone/poc-
 | Retry behavior differs from expected attempts | Retry/backoff/idempotency policy drift | `poc:run` + `poc:inspect` | `POC-003`, `POC-011` |
 | Demo cannot be reproduced quickly | Operator runbook/fixtures not aligned with strict gates | `poc:qualify:demo` | `POC-012` |
 | Webhook response runId does not match requested header | Ingress did not apply deterministic run-id override | `poc:qualify:webhook` + `poc:inspect` | `POC-013` |
+| Interrupted run remains stuck in `running` with pending command | Resume path is missing or journal recovery contract drifted | `poc:resume` + `poc:replay` + `poc:qualify:resume` | `POC-014` |
 
 ## Source Of Truth
 
@@ -125,3 +140,4 @@ npm run poc:replay -- --run-id "webhook-demo-001" --journal-dir ".moonstone/poc-
 5. Webhook E2E fixtures/criteria:
    - `test/fixtures/poc/poc-webhook-e2e-fixtures.json`
    - `test/fixtures/poc/poc-webhook-e2e-quality-criteria.json`
+6. Resume CLI qualification test: `test/integration/conformance/poc-resume-cli-qualification.conformance.test.mjs`

@@ -248,3 +248,8 @@
 
 - A prompt-to-run flow is not enough for product-fit evaluation if generated tool intent is hidden in node internals.
 - Emitting deterministic tool-blueprint artifacts (`generatedTools` and `tools.json`) makes pilot feedback actionable because reviewers can inspect what was actually created.
+
+## 2026-03-13: Recovery Features Need CLI-Level Qualification, Not Runtime-Only Tests
+
+- Runtime `resume` correctness is necessary but insufficient for operator confidence if no first-class CLI contract exists.
+- A crash->`poc:resume`->inspect/replay conformance gate catches integration drift between journal state, connector dispatch, and operator command surfaces.
