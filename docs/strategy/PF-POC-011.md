@@ -3,7 +3,7 @@
 **Milestone**: `PF-POC-011`
 **Execution Branch**: `codex/pf-runtime-024-promptable-tool-blueprints`
 **Owner**: `core`
-**Status**: `in_progress`
+**Status**: `done`
 **Last Updated**: `2026-03-13`
 
 ## Objective
@@ -50,3 +50,4 @@ Make promptable tool creation explicit in the pilot path so generated tool inten
 | 2026-03-13 13:28 | Wired pilot outputs to emit/store tool blueprints (`generatedTools`, `tools.json`) and updated operator pilot guide contract. | `scripts/poc-pilot.mjs`, `docs/workflows/PF-POC-PILOT-promptable-builder.md`, `node --test test/integration/conformance/poc-pilot.conformance.test.mjs` |
 | 2026-03-13 13:31 | Completed strict regression evidence for PF-POC-011 implementation slice with tracker integrity/freshness green. | `npm run verify:strict`, `npm run check:verification-fresh` |
 | 2026-03-13 13:36 | Opened implementation PR for PF-POC-011 slice with required governance template and validation evidence. | `https://github.com/chhhhhyoo/Moonstone/pull/16` |
+| 2026-03-13 14:05 | Merged PF-RUNTIME-024 and closed PF-POC-011 action/risk scope (`ACT-016`, `POC-015`) with exit criteria satisfied. | `https://github.com/chhhhhyoo/Moonstone/pull/16`, `docs/strategy/MILESTONES.md`, `docs/strategy/FUTURE-ACTIONS.md`, `docs/strategy/2026-03-12-pf-poc-001-risk-register.md` |

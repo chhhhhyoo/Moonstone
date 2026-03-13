@@ -17,8 +17,8 @@
 | POC-011 | Runtime branch correctness under nominal paths can still fail under connector fault windows and retry exhaustion edges | medium | high | Add fault-injection matrix over compiled fixtures to assert retry/failure-edge/recovery determinism | core | done |
 | POC-012 | Even with green quality gates, adoption can stall without an operator-facing runbook and deterministic demo qualification pack | medium | medium | Build demo-run qualification checklist and operator runbook tied to strict verification evidence | core | done |
 | POC-013 | Webhook ingress can silently break deterministic replay triage when run-id override handling is undefined or untested end-to-end | medium | high | Add webhook E2E qualification matrix with header-based run-id override and replay/inspect continuity assertions | core | done |
-| POC-014 | Interruption recovery can remain operationally brittle when `resume` is runtime-internal only and lacks CLI/operator qualification proof | medium | high | Add first-class `poc:resume` command and crash-recovery qualification matrix tied to strict verification evidence | core | planned |
-| POC-015 | Prompt-based pilot can appear “agentic” while still hiding generated tool intent, making correctness and reproducibility hard to review | medium | high | Emit deterministic tool-blueprint output from compiler/pilot and qualify with CLI-level conformance gates | core | in_progress |
+| POC-014 | Interruption recovery can remain operationally brittle when `resume` is runtime-internal only and lacks CLI/operator qualification proof | medium | high | Add first-class `poc:resume` command and crash-recovery qualification matrix tied to strict verification evidence | core | in_progress |
+| POC-015 | Prompt-based pilot can appear “agentic” while still hiding generated tool intent, making correctness and reproducibility hard to review | medium | high | Emit deterministic tool-blueprint output from compiler/pilot and qualify with CLI-level conformance gates | core | done |
 
 ## Trigger Conditions
 
