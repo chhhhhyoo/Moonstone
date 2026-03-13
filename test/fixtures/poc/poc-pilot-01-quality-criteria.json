@@ -1,0 +1,25 @@
+{
+  "version": "1.0.0",
+  "minimumScenarioCount": 6,
+  "requiredScenarioIds": [
+    "resolved-role-apply",
+    "ambiguity-choice-proposal",
+    "ambiguity-choice-apply-selected",
+    "ambiguity-choice-missing-proposal-id",
+    "ambiguity-choice-unknown-proposal-id",
+    "unsupported-vague-direction"
+  ],
+  "requiredCommandCoverage": [
+    "poc:pilot",
+    "poc:inspect",
+    "poc:replay"
+  ],
+  "requiredEventTypes": [
+    "run_started",
+    "command_emitted",
+    "receipt_recorded",
+    "run_finished"
+  ],
+  "requiredInvalidScenarioCount": 3,
+  "requiredApplyScenarioCount": 2
+}

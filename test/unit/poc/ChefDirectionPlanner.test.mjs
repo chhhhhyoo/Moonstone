@@ -91,6 +91,32 @@ function sampleArtifactWithMultipleRequestAndSummaryRoles() {
   };
 }
 
+function sampleArtifactWithNumericSummarySuffixes() {
+  const artifact = sampleArtifact();
+  return {
+    ...artifact,
+    nodes: [
+      ...artifact.nodes,
+      {
+        id: "openai-summary-10",
+        type: "action.openai",
+        config: {
+          model: "gpt-4o-mini",
+          prompt: "Summarize {{input.text}} with deep context"
+        }
+      },
+      {
+        id: "openai-summary-2",
+        type: "action.openai",
+        config: {
+          model: "gpt-4o-mini",
+          prompt: "Summarize {{input.text}} briefly"
+        }
+      }
+    ]
+  };
+}
+
 test("planChefDirection is deterministic for same artifact and direction", () => {
   const artifact = sampleArtifact();
   const direction = "Please add a summary step after http-1.";
@@ -239,4 +265,19 @@ test("planChefDirectionWithChoices fails closed when direction has multiple ambi
     }),
     /ambiguous|multiple|role/i
   );
+});
+
+test("planChefDirectionWithChoices orders numeric-suffixed role candidates in natural nodeId order", () => {
+  const plan = planChefDirectionWithChoices({
+    artifact: sampleArtifactWithNumericSummarySuffixes(),
+    direction: "After summary step, add a summary step for the operator."
+  });
+
+  assert.equal(plan.status, "choice_required");
+  const candidateNodeIds = plan.proposalCandidates.map((entry) => entry.operation.afterNodeId);
+  assert.deepEqual(candidateNodeIds, [
+    "openai-success-1",
+    "openai-summary-2",
+    "openai-summary-10"
+  ]);
 });

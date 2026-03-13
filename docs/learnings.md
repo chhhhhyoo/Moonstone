@@ -321,3 +321,9 @@
 - Without explicit checkpoint gates, teams can pass many local tests while still drifting from product-level pilot criteria.
 - A C0..C5 fail-closed checkpoint model (entry gate, RED harness, GREEN gap closure, REFACTOR, strict final gate) forces measurable progress and prevents silent scope creep.
 - Pilot acceptance should be scenario-corpus-driven with deterministic evidence, not ad hoc “looks good” demos.
+
+## 2026-03-13: CLI Failure Payloads Are Part Of The Product Contract
+
+- If failure paths print ad hoc stderr text, conformance harnesses cannot qualify fail-closed behavior deterministically.
+- Emit stable JSON failure payloads (`ok/status/error.code/error.message`) on stdout so invalid-direction and invalid-apply scenarios are machine-checkable, reproducible, and operator-legible.
+- Candidate ordering should be human-legible deterministic too: natural node-id sort (`...-2` before `...-10`) avoids review confusion without sacrificing determinism.

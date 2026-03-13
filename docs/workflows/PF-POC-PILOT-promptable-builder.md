@@ -168,7 +168,7 @@ Expected proposal-choice result:
 
 1. `status` is `proposal_choice_required`.
 2. `proposal` is `null`.
-3. `proposalCandidates[]` is deterministic and sorted by candidate `afterNodeId`.
+3. `proposalCandidates[]` is deterministic and sorted by candidate `afterNodeId` in natural order (`...-2` before `...-10`).
 4. each candidate includes `proposalId`, `resolvedAnchors`, and `preview`.
 
 Apply with explicit selection:
@@ -190,6 +190,39 @@ Safety contract:
 1. missing `--proposal-id` on ambiguous apply fails closed with `CHEF_DIRECTION_PROPOSAL_ID_REQUIRED`.
 2. unknown `--proposal-id` fails closed with `CHEF_DIRECTION_PROPOSAL_ID_UNKNOWN`.
 3. directions with multiple ambiguous role references fail closed (`CHEF_DIRECTION_MULTI_ROLE_AMBIGUOUS`).
+4. unsupported vague direction fails closed with `CHEF_DIRECTION_UNSUPPORTED`.
+5. all pilot failures emit deterministic JSON payloads on stdout:
+   - `{"ok": false, "status": "failed", "error": {"code": "...", "message": "..."}}`
+
+### Failure Map (Operator Action)
+
+1. `CHEF_DIRECTION_PROPOSAL_ID_REQUIRED`:
+   - action: run proposal mode first and copy one `proposalCandidates[].proposalId`.
+2. `CHEF_DIRECTION_PROPOSAL_ID_UNKNOWN`:
+   - action: refresh proposal mode output and use a currently returned `proposalId`.
+3. `CHEF_DIRECTION_UNSUPPORTED`:
+   - action: restate direction as one bounded operation with explicit anchor (for example `after <node|role> ...`).
+4. `CHEF_DIRECTION_MULTI_ROLE_AMBIGUOUS`:
+   - action: reduce ambiguity with selector terms (`first`, `latest`) or split into separate directions.
+5. `CHEF_ROLE_AMBIGUOUS`:
+   - action: re-run with `poc:pilot --direction` to obtain choice candidates and then apply with `--proposal-id`.
+
+## Pilot-01 Qualification Gate (PF-POC-021)
+
+Run this as the product-level pass/fail gate for lead-chef direction quality:
+
+```bash
+npm run poc:qualify:pilot
+```
+
+Gate scope:
+
+1. role-based resolved direction apply path,
+2. single-role ambiguity proposal-choice path,
+3. apply selection success path,
+4. missing/unknown `--proposal-id` deterministic failure payloads,
+5. unsupported vague direction deterministic failure payload,
+6. inspect/replay continuity for applied scenarios.
 
 ## Direct-Apply Mutation Check (PF-POC-015)
 
