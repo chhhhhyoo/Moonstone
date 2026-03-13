@@ -133,6 +133,7 @@
 - `notes/spec-impact/2026-03-13-pf-poc-022-direction-pack-v1.md`: 2026-03-13 PF-POC-022 Direction Pack v1 Impact
 - `notes/spec-impact/2026-03-13-pf-poc-023-direction-pack-ambiguity-choice.md`: 2026-03-13 PF-POC-023 Direction-Pack Ambiguity Choice Impact
 - `notes/spec-impact/2026-03-13-pf-poc-024-chef-intent-pack-synthesis.md`: 2026-03-13 PF-POC-024 Chef Intent Pack Synthesis Impact
+- `notes/spec-impact/2026-03-13-pf-poc-025-intent-synthesis-explainability-guardrails.md`: 2026-03-13 PF-POC-025 Intent-Synthesis Explainability + Safety Guardrails Impact
 - `notes/spec-impact/2026-03-13-pf-poc-module-format-decision.md`: 2026-03-13 POC Module Format Decision (MJS Now, TS Slice Later)
 
 ## Documentation Catalog

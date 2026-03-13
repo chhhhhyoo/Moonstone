@@ -318,8 +318,11 @@ Expected proposal contract:
 
 1. `status` is `proposal_pack_only`.
 2. `proposalPack.diagnostics.mode` is `chef-intent-pack-v1`.
-3. `proposalPack.proposals[]` is deterministic and ordered.
-4. source artifact remains unchanged until apply confirmation.
+3. `proposalPack.diagnostics.synthesisApplied` is `true`.
+4. `proposalPack.diagnostics.derivedClauses[]` and `proposalPack.diagnostics.intentSignals[]` are deterministic.
+5. `proposalPack.diagnostics.warnings[]` is deterministic (often empty for clear intent).
+6. `proposalPack.proposals[]` is deterministic and ordered.
+7. source artifact remains unchanged until apply confirmation.
 
 Apply synthesized pack:
 
@@ -340,6 +343,29 @@ Intent synthesis limits (v1):
 2. synthesized packs remain capped at `2-3` operations,
 3. unsupported vague intent still fails closed with `CHEF_DIRECTION_UNSUPPORTED`,
 4. all synthesized packs still use the same pack apply safety contracts (atomic apply + inspect/replay continuity).
+
+## Intent-Synthesis Explainability + Safety Guardrails (PF-POC-025)
+
+Synthesis vs explicit-pack diagnostics:
+
+1. synthesized (`no explicit then`, bounded inferable intent):
+   - `proposalPack.diagnostics.mode = chef-intent-pack-v1`
+   - `proposalPack.diagnostics.synthesisApplied = true`
+   - `derivedClauses[]` records the inferred deterministic clause chain
+   - `intentSignals[]` records deterministic extraction signals
+2. explicit pack (`... then ...` provided by operator):
+   - `proposalPack.diagnostics.mode = bounded-operation-direction-pack-v1`
+   - `proposalPack.diagnostics.synthesisApplied = false`
+   - `derivedClauses[] = []`, `intentSignals[] = []`
+
+Fail-closed synthesis guardrails:
+
+1. `CHEF_DIRECTION_INTENT_MULTI_URL_CONFLICT`:
+   - trigger: one synthesized direction contains multiple URLs
+   - action: split into explicit `then` clauses or keep one URL per direction
+2. `CHEF_DIRECTION_INTENT_EVENT_CONFLICT`:
+   - trigger: one synthesized direction mixes conflicting explicit event hints (for example `on success` + `on failed`)
+   - action: keep one explicit `on <event>` per direction or split into separate directions
 
 ## Direct-Apply Mutation Check (PF-POC-015)
 

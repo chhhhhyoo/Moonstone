@@ -707,6 +707,11 @@ test("poc:pilot supports multi-clause direction pack proposal and atomic apply",
     assert.equal(proposalPayload.proposalPack.proposals.length, 2);
     assert.equal(proposalPayload.proposalPack.proposals[0].operationType, "add_http_after");
     assert.equal(proposalPayload.proposalPack.proposals[1].operationType, "connect_nodes");
+    assert.equal(proposalPayload.proposalPack.diagnostics.mode, "bounded-operation-direction-pack-v1");
+    assert.equal(proposalPayload.proposalPack.diagnostics.synthesisApplied, false);
+    assert.deepEqual(proposalPayload.proposalPack.diagnostics.derivedClauses, []);
+    assert.deepEqual(proposalPayload.proposalPack.diagnostics.intentSignals, []);
+    assert.deepEqual(proposalPayload.proposalPack.diagnostics.warnings, []);
 
     const applyResult = await runNodeScript([
       "scripts/poc-pilot.mjs",
@@ -789,6 +794,19 @@ test("poc:pilot synthesizes proposal pack from high-level intent without explici
     assert.equal(proposalPayload.proposalPack.proposals.length, 2);
     assert.equal(proposalPayload.proposalPack.proposals[0].operationType, "add_http_after");
     assert.equal(proposalPayload.proposalPack.proposals[1].operationType, "add_openai_after");
+    assert.equal(proposalPayload.proposalPack.diagnostics.mode, "chef-intent-pack-v1");
+    assert.equal(proposalPayload.proposalPack.diagnostics.synthesisApplied, true);
+    assert.deepEqual(proposalPayload.proposalPack.diagnostics.derivedClauses, [
+      "After latest request step, add an API check step using GET https://api.example.com/orders/summary.",
+      "After latest request step, add a summary step for the operator on success."
+    ]);
+    assert.deepEqual(proposalPayload.proposalPack.diagnostics.intentSignals, [
+      "http_url:https://api.example.com/orders/summary",
+      "http_intent",
+      "summary_intent",
+      "target:operator"
+    ]);
+    assert.deepEqual(proposalPayload.proposalPack.diagnostics.warnings, []);
 
     const applyResult = await runNodeScript([
       "scripts/poc-pilot.mjs",
@@ -982,6 +1000,141 @@ test("poc:pilot returns proposal-pack-choice-required for single ambiguous claus
 
     const sourceAfterRaw = await readFile(initialPayload.paths.artifactPath, "utf8");
     assert.equal(sourceAfterRaw, sourceBeforeRaw, "direction-pack-choice apply must not mutate source artifact file");
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("poc:pilot keeps unsupported vague direction fail-closed when synthesis cannot infer a valid pack", async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), "moonstone-poc-pilot-direction-unsupported-"));
+  try {
+    const initialOutDir = path.join(tempRoot, "initial");
+    const proposalOutDir = path.join(tempRoot, "proposal-unsupported");
+    const journalDir = path.join(tempRoot, "journal");
+
+    const initialResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--prompt",
+      "POST https://api.example.com/orders then summarize result",
+      "--input",
+      "{\"text\":\"pilot-direction-unsupported-initial\"}",
+      "--outdir",
+      initialOutDir,
+      "--journal-dir",
+      journalDir,
+      "--run-id",
+      "pilot-direction-unsupported-initial-001"
+    ]);
+    const initialPayload = parseJsonOutput(initialResult.stdout, "poc:pilot(initial-direction-unsupported)");
+
+    await assert.rejects(
+      () => runNodeScript([
+        "scripts/poc-pilot.mjs",
+        "--mode",
+        "mock",
+        "--artifact",
+        initialPayload.paths.artifactPath,
+        "--direction",
+        "Make this workflow better somehow.",
+        "--outdir",
+        proposalOutDir,
+        "--journal-dir",
+        journalDir
+      ]),
+      /CHEF_DIRECTION_UNSUPPORTED/i
+    );
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("poc:pilot fails closed with deterministic code for multi-url synthesis conflict", async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), "moonstone-poc-pilot-direction-multi-url-conflict-"));
+  try {
+    const initialOutDir = path.join(tempRoot, "initial");
+    const proposalOutDir = path.join(tempRoot, "proposal-multi-url-conflict");
+    const journalDir = path.join(tempRoot, "journal");
+
+    const initialResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--prompt",
+      "POST https://api.example.com/orders then summarize result",
+      "--input",
+      "{\"text\":\"pilot-direction-multi-url-conflict-initial\"}",
+      "--outdir",
+      initialOutDir,
+      "--journal-dir",
+      journalDir,
+      "--run-id",
+      "pilot-direction-multi-url-conflict-initial-001"
+    ]);
+    const initialPayload = parseJsonOutput(initialResult.stdout, "poc:pilot(initial-direction-multi-url-conflict)");
+
+    await assert.rejects(
+      () => runNodeScript([
+        "scripts/poc-pilot.mjs",
+        "--mode",
+        "mock",
+        "--artifact",
+        initialPayload.paths.artifactPath,
+        "--direction",
+        "Please check GET https://api.example.com/orders/summary and GET https://api.example.com/orders/audit and summarize result for the operator.",
+        "--outdir",
+        proposalOutDir,
+        "--journal-dir",
+        journalDir
+      ]),
+      /CHEF_DIRECTION_INTENT_MULTI_URL_CONFLICT/i
+    );
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test("poc:pilot fails closed with deterministic code for conflicting synthesis event intent", async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), "moonstone-poc-pilot-direction-event-conflict-"));
+  try {
+    const initialOutDir = path.join(tempRoot, "initial");
+    const proposalOutDir = path.join(tempRoot, "proposal-event-conflict");
+    const journalDir = path.join(tempRoot, "journal");
+
+    const initialResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--prompt",
+      "POST https://api.example.com/orders then summarize result",
+      "--input",
+      "{\"text\":\"pilot-direction-event-conflict-initial\"}",
+      "--outdir",
+      initialOutDir,
+      "--journal-dir",
+      journalDir,
+      "--run-id",
+      "pilot-direction-event-conflict-initial-001"
+    ]);
+    const initialPayload = parseJsonOutput(initialResult.stdout, "poc:pilot(initial-direction-event-conflict)");
+
+    await assert.rejects(
+      () => runNodeScript([
+        "scripts/poc-pilot.mjs",
+        "--mode",
+        "mock",
+        "--artifact",
+        initialPayload.paths.artifactPath,
+        "--direction",
+        "Please check GET https://api.example.com/orders/summary and summarize result on success and on failed.",
+        "--outdir",
+        proposalOutDir,
+        "--journal-dir",
+        journalDir
+      ]),
+      /CHEF_DIRECTION_INTENT_EVENT_CONFLICT/i
+    );
   } finally {
     await rm(tempRoot, { recursive: true, force: true });
   }

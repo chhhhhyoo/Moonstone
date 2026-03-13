@@ -340,6 +340,12 @@
 - Emit stable JSON failure payloads (`ok/status/error.code/error.message`) on stdout so invalid-direction and invalid-apply scenarios are machine-checkable, reproducible, and operator-legible.
 - Candidate ordering should be human-legible deterministic too: natural node-id sort (`...-2` before `...-10`) avoids review confusion without sacrificing determinism.
 
+## 2026-03-13: Inference Transparency Must Precede Intent-Synthesis Expansion
+
+- Adding more natural-language breadth before exposing deterministic inference rationale makes operator review and debugging blind.
+- Synthesized pack outputs should explicitly show what clauses were derived and which intent signals drove that derivation.
+- Guardrails should block known conflict shapes with deterministic codes rather than silently guessing (for example multi-URL or conflicting explicit event intent in one direction).
+
 ## 2026-03-13: Multi-Step Chef Intent Needs Atomic Mutation Semantics
 
 - Supporting multi-clause direction (`then` chain) without atomic apply creates partial-mutation risk that can silently degrade artifact lineage and trust.
