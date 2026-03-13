@@ -149,3 +149,30 @@ test("compilePrompt diagnostics warns on unsupported conditional phrasing fallba
     /Conditional intent detected but no supported condition pattern matched/
   );
 });
+
+test("compilePrompt infers URL from prompt and emits deterministic generatedTools blueprint", () => {
+  const { artifact, diagnostics } = compilePrompt({
+    prompt: "POST https://api.example.com/orders then summarize result",
+    now: FIXED_NOW
+  });
+
+  assert.equal(artifact.nodes[0].config.url, "https://api.example.com/orders");
+  assert.ok(Array.isArray(diagnostics.generatedTools));
+  assert.ok(diagnostics.generatedTools.length >= 2);
+
+  const httpTool = diagnostics.generatedTools.find((tool) => tool.nodeId === "http-1");
+  assert.deepEqual(
+    httpTool
+      ? {
+        connectorType: httpTool.connectorType,
+        configSummary: httpTool.configSummary
+      }
+      : null,
+    {
+      connectorType: "action.http",
+      configSummary: "POST https://api.example.com/orders"
+    }
+  );
+
+  assert.deepEqual(artifact.metadata.compilerHints.generatedTools, diagnostics.generatedTools);
+});

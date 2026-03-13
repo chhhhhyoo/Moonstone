@@ -20,7 +20,21 @@ Expected result:
 1. `status` should be `completed`.
 2. `diagnostics.branchMode` should usually be `comparator` for this prompt.
 3. `executedNodeIds` should reflect one branch path, not both.
-4. Output includes file paths for artifact/diagnostics/run/inspect/replay.
+4. Output includes `generatedTools` and file paths for `tools.json` plus artifact/diagnostics/run/inspect/replay.
+
+## Prompt-Derived URL Check
+
+```bash
+npm run poc:pilot -- \
+  --mode mock \
+  --prompt "POST https://api.example.com/orders then summarize result" \
+  --input '{"text":"url-inference"}'
+```
+
+Expected result:
+
+1. `generatedTools` includes an HTTP tool whose `configSummary` is `POST https://api.example.com/orders`.
+2. Compiled artifact `http-1` node URL uses the same prompt-derived URL unless `--http-url` is explicitly provided.
 
 ## Failure Branch Check
 
@@ -54,8 +68,9 @@ npm run poc:pilot -- \
 ## What This Pilot Proves
 
 1. Promptable workflow creation exists and is runnable.
-2. Runtime execution is command/receipt/journal driven.
-3. Operator can inspect and replay exact runs from returned run-id.
+2. Prompt-derived tool blueprints are explicit (`generatedTools` + `tools.json`) and reviewable.
+3. Runtime execution is command/receipt/journal driven.
+4. Operator can inspect and replay exact runs from returned run-id.
 
 ## What It Does Not Prove Yet
 

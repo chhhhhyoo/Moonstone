@@ -73,6 +73,7 @@ async function main() {
   const runSummaryPath = path.resolve(pilotRoot, "run-summary.json");
   const inspectionPath = path.resolve(pilotRoot, "inspection.json");
   const replayPath = path.resolve(pilotRoot, "replay.json");
+  const toolsPath = path.resolve(pilotRoot, "tools.json");
   const journalDir = path.resolve(
     process.cwd(),
     args["journal-dir"] ? String(args["journal-dir"]) : path.join(".moonstone", "pilot", "journal")
@@ -83,9 +84,13 @@ async function main() {
     httpUrl: args["http-url"] ? String(args["http-url"]) : undefined,
     openaiModel: args.model ? String(args.model) : undefined
   });
+  const generatedTools = Array.isArray(diagnostics.generatedTools)
+    ? diagnostics.generatedTools
+    : (artifact.metadata?.compilerHints?.generatedTools ?? []);
 
   await writeJsonFile(artifactPath, artifact);
   await writeJsonFile(diagnosticsPath, diagnostics);
+  await writeJsonFile(toolsPath, generatedTools);
 
   const journalStore = new FileRunJournalStore({ rootDir: journalDir });
   const runtime = new WorkflowRuntime({
@@ -116,6 +121,7 @@ async function main() {
       branchMode: diagnostics.branchMode,
       warnings: diagnostics.warnings
     },
+    generatedTools,
     executedNodeIds: Object.keys(runSummary.nodeResults).sort(),
     paths: {
       artifactPath,
@@ -123,6 +129,7 @@ async function main() {
       runSummaryPath,
       inspectionPath,
       replayPath,
+      toolsPath,
       journalDir
     },
     quickStart: {

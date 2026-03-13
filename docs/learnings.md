@@ -243,3 +243,8 @@
 
 - Teams lose confidence when every change is another gate but there is no fast end-to-end “does this feel right?” workflow.
 - A pilot command that compiles, runs, inspects, and replays in one flow exposes product gaps much faster than documentation reviews.
+
+## 2026-03-13: Promptable Tool Creation Must Be Explicit, Not Implied
+
+- A prompt-to-run flow is not enough for product-fit evaluation if generated tool intent is hidden in node internals.
+- Emitting deterministic tool-blueprint artifacts (`generatedTools` and `tools.json`) makes pilot feedback actionable because reviewers can inspect what was actually created.
