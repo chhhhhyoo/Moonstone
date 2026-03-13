@@ -48,3 +48,4 @@ Upgrade the pilot from input-only conditional parsing to upstream-aware branch s
 | 2026-03-13 17:55 | Updated pilot runbook with an explicit upstream-status branch qualification scenario and documented current parser limitation scope. | `docs/workflows/PF-POC-PILOT-promptable-builder.md` |
 | 2026-03-13 17:59 | Completed strict regression and freshness evidence for PF-POC-014 implementation scope; tracker set is PR-ready. | `npm run verify:strict`, `npm run check:verification-fresh`, `npm run check:strategy`, `npm run check:spec` |
 | 2026-03-13 18:02 | Re-ran strict + freshness after final log/learnings updates to keep verification evidence fully fresh for PR handoff. | `npm run verify:strict`, `npm run check:verification-fresh` |
+| 2026-03-13 18:10 | Opened PF-RUNTIME-028 implementation PR with insight-first template, reviewer hotspots, and full validation evidence. | `https://github.com/chhhhhyoo/Moonstone/pull/20` |
