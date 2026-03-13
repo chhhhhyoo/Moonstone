@@ -44,17 +44,29 @@ import { normalizeWorkflowArtifact, validateWorkflowArtifact } from "./WorkflowA
 
 /**
  * @typedef {{
+ *   toolId: string,
+ *   nodeId: string,
+ *   connectorType: "action.http" | "action.openai",
+ *   name: string,
+ *   configSummary: string
+ * }} GeneratedToolBlueprint
+ */
+
+/**
+ * @typedef {{
  *   version: string,
- *   prompt: string,
- *   branchMode: BranchMode,
- *   inferred: {
+  *   prompt: string,
+  *   branchMode: BranchMode,
+  *   inferred: {
  *     httpMethod: string,
+ *     httpUrl: string,
  *     hasFailureBranch: boolean,
  *     inputExistsPath: string | null,
  *     inputComparisonCondition: InferredComparatorCondition | null
  *   },
  *   warnings: string[],
- *   generatedNodeIds: string[]
+ *   generatedNodeIds: string[],
+ *   generatedTools: GeneratedToolBlueprint[]
  * }} CompileDiagnostics
  */
 
@@ -78,6 +90,18 @@ function inferHttpMethod(prompt) {
     return "DELETE";
   }
   return "GET";
+}
+
+function trimTrailingPunctuation(url) {
+  return String(url).replace(/[),.;!?]+$/g, "");
+}
+
+function inferHttpUrl(prompt) {
+  const match = /\bhttps?:\/\/[^\s"')`]+/i.exec(prompt);
+  if (!match) {
+    return null;
+  }
+  return trimTrailingPunctuation(match[0]);
 }
 
 function inferFailureBranch(prompt) {
@@ -208,22 +232,26 @@ function hasConditionalIntent(prompt) {
  * @param {{
  *   cleanPrompt: string,
  *   httpMethod: string,
+ *   httpUrl: string,
  *   hasFailureBranch: boolean,
  *   inputExistsPath: string | null,
  *   inputComparisonCondition: InferredComparatorCondition | null,
  *   branchMode: BranchMode,
- *   generatedNodeIds: string[]
+ *   generatedNodeIds: string[],
+ *   generatedTools: GeneratedToolBlueprint[]
  * }} params
  * @returns {CompileDiagnostics}
  */
 function buildCompileDiagnostics({
   cleanPrompt,
   httpMethod,
+  httpUrl,
   hasFailureBranch,
   inputExistsPath,
   inputComparisonCondition,
   branchMode,
-  generatedNodeIds
+  generatedNodeIds,
+  generatedTools
 }) {
   /** @type {string[]} */
   const warnings = [];
@@ -242,18 +270,50 @@ function buildCompileDiagnostics({
     branchMode,
     inferred: {
       httpMethod,
+      httpUrl,
       hasFailureBranch,
       inputExistsPath,
       inputComparisonCondition
     },
     warnings,
-    generatedNodeIds
+    generatedNodeIds,
+    generatedTools
   };
+}
+
+/**
+ * @param {Array<{ id: string, type: "action.http" | "action.openai", config: Record<string, unknown> }>} nodes
+ * @returns {GeneratedToolBlueprint[]}
+ */
+function buildGeneratedTools(nodes) {
+  return nodes.map((node) => {
+    const normalizedNodeId = node.id.replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    if (node.type === "action.http") {
+      const method = String(node.config.method ?? "GET").toUpperCase();
+      const url = String(node.config.url ?? "");
+      return {
+        toolId: `tool.${normalizedNodeId}`,
+        nodeId: node.id,
+        connectorType: "action.http",
+        name: `HTTP ${node.id}`,
+        configSummary: `${method} ${url}`.trim()
+      };
+    }
+
+    const model = String(node.config.model ?? "");
+    return {
+      toolId: `tool.${normalizedNodeId}`,
+      nodeId: node.id,
+      connectorType: "action.openai",
+      name: `OpenAI ${node.id}`,
+      configSummary: model ? `model=${model}` : "model=unknown"
+    };
+  });
 }
 
 export function compilePrompt({
   prompt,
-  httpUrl = "https://example.com/api",
+  httpUrl,
   openaiModel = "gpt-4o-mini",
   now = () => new Date()
 }) {
@@ -264,6 +324,8 @@ export function compilePrompt({
 
   const slug = slugify(cleanPrompt.split(" ").slice(0, 8).join(" "));
   const httpMethod = inferHttpMethod(cleanPrompt);
+  const inferredHttpUrl = inferHttpUrl(cleanPrompt);
+  const resolvedHttpUrl = String(httpUrl ?? inferredHttpUrl ?? "https://example.com/api");
   const hasFailureBranch = inferFailureBranch(cleanPrompt);
   const inputExistsPath = inferInputExistsPath(cleanPrompt);
   const inputComparisonCondition = inferInputComparisonCondition(cleanPrompt);
@@ -275,7 +337,7 @@ export function compilePrompt({
       id: "http-1",
       type: "action.http",
       config: {
-        url: httpUrl,
+        url: resolvedHttpUrl,
         method: httpMethod,
         headers: {
           "Content-Type": "application/json"
@@ -450,16 +512,20 @@ export function compilePrompt({
   };
 
   const artifact = normalizeWorkflowArtifact(artifactDraft);
+  const generatedTools = buildGeneratedTools(artifact.nodes);
+  artifact.metadata.compilerHints.generatedTools = generatedTools;
   validateWorkflowArtifact(artifact);
 
   const diagnostics = buildCompileDiagnostics({
     cleanPrompt,
     httpMethod,
+    httpUrl: resolvedHttpUrl,
     hasFailureBranch,
     inputExistsPath,
     inputComparisonCondition,
     branchMode,
-    generatedNodeIds: artifact.nodes.map((node) => node.id)
+    generatedNodeIds: artifact.nodes.map((node) => node.id),
+    generatedTools
   });
 
   return {

@@ -39,12 +39,15 @@ test("poc:pilot compiles and runs prompt workflow in mock mode", async () => {
     assert.equal(payload.runId, runId);
     assert.equal(payload.diagnostics.branchMode, "comparator");
     assert.deepEqual(payload.executedNodeIds.sort(), ["http-1", "openai-condition-true-1"].sort());
+    assert.ok(Array.isArray(payload.generatedTools));
+    assert.ok(payload.generatedTools.length >= 2);
 
     await expectFile(payload.paths.artifactPath);
     await expectFile(payload.paths.diagnosticsPath);
     await expectFile(payload.paths.runSummaryPath);
     await expectFile(payload.paths.inspectionPath);
     await expectFile(payload.paths.replayPath);
+    await expectFile(payload.paths.toolsPath);
 
     const runSummary = JSON.parse(await readFile(payload.paths.runSummaryPath, "utf8"));
     assert.equal(runSummary.status, "completed");
@@ -52,6 +55,10 @@ test("poc:pilot compiles and runs prompt workflow in mock mode", async () => {
       "http-1": 1,
       "openai-condition-true-1": 1
     });
+
+    const generatedTools = JSON.parse(await readFile(payload.paths.toolsPath, "utf8"));
+    assert.deepEqual(generatedTools, payload.generatedTools);
+    assert.ok(generatedTools.some((tool) => tool.nodeId === "http-1"));
   } finally {
     await rm(tempRoot, { recursive: true, force: true });
   }
