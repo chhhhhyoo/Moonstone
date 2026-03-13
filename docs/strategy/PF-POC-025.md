@@ -3,7 +3,7 @@
 **Milestone**: `PF-POC-025`
 **Execution Branch**: `codex/pf-runtime-039-intent-synthesis-guardrails`
 **Owner**: `core`
-**Status**: `in_progress`
+**Status**: `done`
 **Last Updated**: `2026-03-13`
 
 ## Objective
@@ -153,3 +153,4 @@ Gate:
 | 2026-03-13 16:25 | C2+C3 GREEN complete: planner now emits deterministic synthesis diagnostics, explicit-pack non-synthesis diagnostics, and fail-closed conflict guards; unit + conformance suites green. | `src/core/poc/ChefDirectionPlanner.mjs`, `test/unit/poc/ChefDirectionPlanner.test.mjs`, `test/integration/conformance/poc-pilot.conformance.test.mjs`, `node --test test/unit/poc/ChefDirectionPlanner.test.mjs` (GREEN), `node --test test/integration/conformance/poc-pilot.conformance.test.mjs` (GREEN) |
 | 2026-03-13 16:29 | C4 REFACTOR/docs complete: updated operator runbook for synthesized vs explicit diagnostics interpretation and conflict action map; recorded PF-POC-025 spec impact and durable learning. | `docs/workflows/PF-POC-PILOT-promptable-builder.md`, `notes/spec-impact/2026-03-13-pf-poc-025-intent-synthesis-explainability-guardrails.md`, `docs/learnings.md`, `docs/logs/2026-03-13.md` |
 | 2026-03-13 16:30 | C5 strict gate complete: strict verification and freshness/strategy/spec checks all green after typecheck-safe JSDoc fix for diagnostics arrays. | `npm run verify:strict`, `npm run check:verification-fresh`, `npm run check:strategy`, `npm run check:spec` |
+| 2026-03-13 16:43 | Merge closure complete: milestone/action/risk moved to done and next slice PF-POC-026 activated with dedicated qualification-gate plan before implementation edits. | `docs/strategy/MILESTONES.md`, `docs/strategy/FUTURE-ACTIONS.md`, `docs/strategy/2026-03-12-pf-poc-001-risk-register.md`, `docs/strategy/PF-POC-026.md`, `docs/logs/2026-03-13.md` |

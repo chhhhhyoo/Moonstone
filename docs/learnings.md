@@ -346,6 +346,12 @@
 - Synthesized pack outputs should explicitly show what clauses were derived and which intent signals drove that derivation.
 - Guardrails should block known conflict shapes with deterministic codes rather than silently guessing (for example multi-URL or conflicting explicit event intent in one direction).
 
+## 2026-03-13: New Capability Needs A Dedicated Qualification Gate, Not Just Broad Suite Coverage
+
+- Even when broad pilot conformance is green, contract drift can hide if a behavior is tested only as a side-effect of larger scenarios.
+- Isolating intent-synthesis into its own fixture-driven gate makes diagnostics and error-code regressions immediately attributable and faster to debug.
+- Add a focused operator command for each high-risk behavior lane before expanding capability breadth.
+
 ## 2026-03-13: Multi-Step Chef Intent Needs Atomic Mutation Semantics
 
 - Supporting multi-clause direction (`then` chain) without atomic apply creates partial-mutation risk that can silently degrade artifact lineage and trust.
