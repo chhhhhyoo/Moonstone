@@ -36,6 +36,7 @@ Upgrade the pilot from input-only conditional parsing to upstream-aware branch s
 | 2 | GREEN: compiler/runtime behavior | deterministic upstream-status condition edges and runtime branch execution | targeted tests pass | done |
 | 3 | REFACTOR: pilot docs and diagnostics alignment | runbook/docs updated for upstream-status branch syntax and limits | docs/tests remain consistent | done |
 | 4 | Strict regression + tracker sync | strict verification/freshness evidence and tracker closure updates | `npm run verify:strict` + `npm run check:verification-fresh` pass | done |
+| 5 | Rulebook codification + product-focus reset | explicit branch/PR lifecycle reference and n8n-like promptable automation focus rules in canonical `RULE.md` | `npm run check:links` + `npm run check:spec` pass | done |
 
 ## Implementation Update Log (Append-Only)
 
@@ -49,3 +50,6 @@ Upgrade the pilot from input-only conditional parsing to upstream-aware branch s
 | 2026-03-13 17:59 | Completed strict regression and freshness evidence for PF-POC-014 implementation scope; tracker set is PR-ready. | `npm run verify:strict`, `npm run check:verification-fresh`, `npm run check:strategy`, `npm run check:spec` |
 | 2026-03-13 18:02 | Re-ran strict + freshness after final log/learnings updates to keep verification evidence fully fresh for PR handoff. | `npm run verify:strict`, `npm run check:verification-fresh` |
 | 2026-03-13 18:10 | Opened PF-RUNTIME-028 implementation PR with insight-first template, reviewer hotspots, and full validation evidence. | `https://github.com/chhhhhyoo/Moonstone/pull/20` |
+| 2026-03-13 18:16 | Added follow-up phase for user-requested rule codification to prevent governance drift and force product-first n8n-like promptable automation focus in subsequent slices. | `docs/strategy/PF-POC-014.md`, `docs/governance/RULE.md` |
+| 2026-03-13 18:19 | Completed rulebook codification with branch/PR reference lifecycle and product-first delivery contract; policy cross-reference and logs synced. | `docs/governance/RULE.md`, `docs/governance/pr-branch-policy.md`, `docs/logs/2026-03-13.md`, `npm run check:links`, `npm run check:spec`, `npm run check:strategy` |
+| 2026-03-13 18:24 | Re-ran strict verification and freshness after governance updates so PR state remains fail-closed and evidence-current. | `npm run verify:strict`, `npm run check:verification-fresh` |

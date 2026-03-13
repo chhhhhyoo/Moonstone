@@ -45,6 +45,30 @@ Each section must contain substantive content; empty shells are policy violation
 5. State residual risks and confidence limits explicitly.
 6. Link follow-up action IDs from `docs/strategy/FUTURE-ACTIONS.md` or declare `none`.
 
+## Branch And PR Lifecycle (Reference Contract)
+
+Use this sequence for every delivery slice so branch naming, PR quality, and merge closure remain traceable without hunting multiple docs.
+
+1. Pre-branch:
+   - confirm the target milestone plan file exists in `docs/strategy/`
+   - if it does not exist, create it before creating the branch
+2. Create branch:
+   - branch format: `codex/pf-<stream>-<id>-<slug>`
+   - keep one dominant milestone identity per branch
+3. Implement:
+   - keep commits milestone-scoped using `PF-<STREAM>-<ID>: <summary>` subjects
+   - update the active plan log immediately after each material step
+4. Pre-PR gate:
+   - run required verification commands and capture concrete pass/fail outputs
+5. Open PR:
+   - title format: `[PF-<STREAM>-<ID>] <summary>`
+   - PR body must follow the canonical section order (problem -> solution -> reviewer focus -> risk -> evidence -> follow-ups -> tactics checklist)
+6. Post-merge closure (same refresh set):
+   - mark milestone status
+   - mark linked action status
+   - mark linked risk status
+   - activate next slice with its plan doc update
+
 ## Plan Discipline (Mandatory)
 
 1. Every new implementation branch or materially new approach must have an explicit plan doc before coding begins.
@@ -55,6 +79,22 @@ Each section must contain substantive content; empty shells are policy violation
 6. Immediately after each material step, append a plan update entry with concrete evidence (commands, tests, artifacts, or review references).
 7. After every merge, trackers must be refreshed together: milestone status, linked future action status, and linked risk status.
 8. Activating a next slice requires creating/updating the next plan doc in the same tracker refresh change set.
+
+## Product-First Delivery Focus (Mandatory)
+
+This project is building an n8n/Opal/make-style promptable automation system, not a governance showcase. Rules below are fail-closed.
+
+1. Every runtime slice must ship a runnable pilot capability that moves promptable automation behavior forward (node selection, edge selection, tool selection, or execution quality).
+2. Governance/setup-only changes are allowed only when they remove a concrete blocker to runtime delivery and must stay narrowly scoped.
+3. New prompt intelligence work must improve one of these contracts:
+   - prompt -> proposed nodes/tools
+   - prompt -> graph connectivity/branching
+   - prompt follow-up -> workflow mutation (add/remove/rewire/retune nodes)
+   - execution evidence -> inspect/replay confidence
+4. User role contract for product direction:
+   - user provides intent, constraints, and review feedback
+   - system must infer and assemble workflow structure/tools with deterministic evidence
+5. If a proposed slice does not improve the above product contracts, reject or re-scope it before implementation.
 
 ## Rejection Triggers
 

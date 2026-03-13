@@ -268,3 +268,8 @@
 
 - Input-only condition parsing creates a fake ceiling for promptable workflows because users naturally ask for routing on connector outcomes (for example status codes).
 - A deterministic mapping from prompt status conditions to terminal receipt paths (`nodeResults.http-N.result.status`) is a practical midpoint between rigid templates and risky dynamic expression engines.
+
+## 2026-03-13: Governance Must Be Product-Serving Or It Becomes Setup Drag
+
+- Branch/PR governance is useful only when it shortens execution ambiguity; if rules are scattered, teams waste time navigating process instead of shipping capability.
+- Keeping lifecycle steps in one canonical `RULE.md` plus a hard product-first slice contract prevents “setup theater” and forces measurable progress on promptable automation behavior.
