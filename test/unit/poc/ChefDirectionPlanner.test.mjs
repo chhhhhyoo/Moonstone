@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { planChefDirection, planChefDirectionWithChoices, planChefDirectionPack } from "../../../src/core/poc/ChefDirectionPlanner.mjs";
+import {
+  planChefDirection,
+  planChefDirectionWithChoices,
+  planChefDirectionPack,
+  planChefDirectionPackWithChoices
+} from "../../../src/core/poc/ChefDirectionPlanner.mjs";
 
 function sampleArtifact() {
   return {
@@ -326,5 +331,40 @@ test("planChefDirectionPack fails closed when any clause is ambiguous", () => {
       ].join(" ")
     }),
     /PACK_CLAUSE_AMBIGUOUS|ambiguous|pack/i
+  );
+});
+
+test("planChefDirectionPackWithChoices returns deterministic pack candidates for exactly one ambiguous clause", () => {
+  const plan = planChefDirectionPackWithChoices({
+    artifact: sampleArtifactWithAmbiguousSummaryRole(),
+    direction: [
+      "After summary step, add a summary step for the operator.",
+      "then connect trigger to http-1 on always."
+    ].join(" ")
+  });
+
+  assert.equal(plan.status, "choice_required");
+  assert.ok(Array.isArray(plan.proposalPackCandidates));
+  assert.equal(plan.proposalPackCandidates.length, 2);
+
+  const firstClauseTargets = plan.proposalPackCandidates.map((candidate) =>
+    candidate.proposals[0].operation.afterNodeId
+  );
+  assert.deepEqual(firstClauseTargets, [...firstClauseTargets].sort());
+  assert.ok(
+    plan.proposalPackCandidates.every((candidate) => typeof candidate.packId === "string" && candidate.packId.length > 0)
+  );
+});
+
+test("planChefDirectionPackWithChoices fails closed when multiple clauses are ambiguous", () => {
+  assert.throws(
+    () => planChefDirectionPackWithChoices({
+      artifact: sampleArtifactWithAmbiguousSummaryRole(),
+      direction: [
+        "After summary step, add a summary step for the operator.",
+        "then connect trigger step to summary step."
+      ].join(" ")
+    }),
+    /PACK_MULTI_AMBIGUOUS|multiple|ambiguous|pack/i
   );
 });

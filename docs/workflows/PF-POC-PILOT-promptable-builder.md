@@ -260,10 +260,47 @@ Pack safety limits in v1:
 
 1. clause separator is explicit `then` only,
 2. max `3` clauses (`CHEF_DIRECTION_PACK_TOO_LARGE` on overflow),
-3. each clause must resolve deterministically to one proposal,
-4. ambiguous clause in pack mode fails closed (`CHEF_DIRECTION_PACK_CLAUSE_AMBIGUOUS`),
-5. `--proposal-id` is unsupported for pack apply in v1 (`CHEF_DIRECTION_PACK_PROPOSAL_ID_UNSUPPORTED`),
-6. apply is all-or-none over the full pack (no partial mutated artifact output).
+3. apply is all-or-none over the full pack (no partial mutated artifact output).
+
+## Direction-Pack Ambiguity Choice (PF-POC-023)
+
+When exactly one clause in a direction pack is ambiguous, proposal mode now returns deterministic candidate packs instead of hard-failing.
+
+```bash
+npm run poc:pilot -- \
+  --mode mock \
+  --artifact .moonstone/pilot/chef-ambiguous/artifact.mutated.json \
+  --direction "After summary step, add a summary step for the operator. then connect trigger to http-1 on always." \
+  --outdir .moonstone/pilot/chef-direction-pack-choice-proposal
+```
+
+Expected proposal contract:
+
+1. `status` is `proposal_pack_choice_required`.
+2. `proposalPack` is `null`.
+3. `proposalPackCandidates[]` is deterministic and ordered by the ambiguous-clause resolved node target.
+4. each candidate includes deterministic `packId` and full `proposals[]`.
+
+Apply with explicit pack selection:
+
+```bash
+npm run poc:pilot -- \
+  --mode mock \
+  --artifact .moonstone/pilot/chef-ambiguous/artifact.mutated.json \
+  --direction "After summary step, add a summary step for the operator. then connect trigger to http-1 on always." \
+  --apply-direction \
+  --proposal-id "pack.<from-candidates>" \
+  --input '{"text":"chef-direction-pack-choice-apply"}' \
+  --outdir .moonstone/pilot/chef-direction-pack-choice-apply \
+  --run-id chef-direction-pack-choice-apply-001
+```
+
+Pack ambiguity safety contract:
+
+1. exactly one ambiguous clause is supported for candidate-pack generation.
+2. missing `--proposal-id` on pack-choice apply fails closed with `CHEF_DIRECTION_PACK_PROPOSAL_ID_REQUIRED`.
+3. unknown `--proposal-id` on pack-choice apply fails closed with `CHEF_DIRECTION_PACK_PROPOSAL_ID_UNKNOWN`.
+4. multiple ambiguous clauses fail closed with `CHEF_DIRECTION_PACK_MULTI_AMBIGUOUS`.
 
 ## Direct-Apply Mutation Check (PF-POC-015)
 

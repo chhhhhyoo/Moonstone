@@ -259,6 +259,12 @@
 - Showing a generated tool list is not enough if multi-step prompts still collapse to one fixed action node.
 - Deterministic extraction of ordered HTTP calls from prompt text is a practical bridge between rigid templates and fully open-ended tool synthesis.
 
+## 2026-03-13: Pack Ambiguity Should Branch Into Deterministic Choices, Not Collapse To Hard-Fail
+
+- Hard-failing every ambiguous clause in multi-step direction packs pushes chefs back into low-level node-ID surgery and breaks composition flow.
+- Bounded candidate-pack generation (exactly one ambiguous clause) keeps UX productive without losing fail-closed safety.
+- Explicit pack selection (`--proposal-id`) is mandatory for trust; silent auto-pick logic undermines reproducibility and auditability.
+
 ## 2026-03-13: Ad-Hoc TS Adoption During POC Delivery Creates Toolchain Drift
 
 - Introducing `.ts` incrementally into a `.mjs`-dominant Node-direct runtime creates a mixed contract that increases debugging and CI ambiguity.
