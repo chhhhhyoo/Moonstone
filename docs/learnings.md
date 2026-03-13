@@ -273,3 +273,13 @@
 
 - Branch/PR governance is useful only when it shortens execution ambiguity; if rules are scattered, teams waste time navigating process instead of shipping capability.
 - Keeping lifecycle steps in one canonical `RULE.md` plus a hard product-first slice contract prevents “setup theater” and forces measurable progress on promptable automation behavior.
+
+## 2026-03-13: Prompt Mutation Must Be Fail-Closed Before It Is "Agentic"
+
+- Letting free-form prompts mutate workflow topology without an explicit operation verb quickly becomes nondeterministic and unsafe.
+- A strict single-operation contract with deterministic error codes is a practical first step that gives real product signal without introducing hidden graph corruption risk.
+
+## 2026-03-13: Conformance Gates Must Be Hermetic To Be Trustworthy
+
+- Mutation scenarios that rely on public internet URLs create flaky false negatives unrelated to runtime logic.
+- Routing all qualification HTTP traffic through local mock origins keeps conformance deterministic and makes failures actionable.

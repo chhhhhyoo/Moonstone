@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "minimumScenarioCount": 6,
+  "requiredScenarioIds": [
+    "add-http-after",
+    "replace-node-tool",
+    "rewire-connect",
+    "remove-leaf",
+    "invalid-ambiguous",
+    "invalid-cycle"
+  ],
+  "requiredCommandCoverage": [
+    "poc:compile",
+    "poc:mutate",
+    "poc:run",
+    "poc:inspect",
+    "poc:replay"
+  ],
+  "requiredEventTypes": [
+    "run_started",
+    "command_emitted",
+    "receipt_recorded",
+    "run_finished"
+  ],
+  "requiredInvalidScenarioCount": 2
+}

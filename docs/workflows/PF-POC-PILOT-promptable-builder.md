@@ -22,6 +22,51 @@ Expected result:
 3. `executedNodeIds` should reflect one branch path, not both.
 4. Output includes `generatedTools` and file paths for `tools.json` plus artifact/diagnostics/run/inspect/replay.
 
+## Direct-Apply Mutation Check (PF-POC-015)
+
+```bash
+npm run poc:compile -- \
+  --prompt "POST https://api.example.com/orders then summarize result" \
+  --out .moonstone/artifacts/pilot-mutate-source.json
+
+npm run poc:mutate -- \
+  --artifact .moonstone/artifacts/pilot-mutate-source.json \
+  --prompt "add http after http-1 method GET url https://api.example.com/orders/summary on success"
+
+npm run poc:run -- \
+  --artifact .moonstone/artifacts/pilot-mutate-source.mutated.json \
+  --input '{"text":"mutate-check"}' \
+  --run-id pilot-mutate-check
+
+npm run poc:inspect -- --run-id pilot-mutate-check
+npm run poc:replay -- --run-id pilot-mutate-check
+```
+
+Expected result:
+
+1. `poc:mutate` returns deterministic JSON with `operationType`, `changeSummary`, and `outputArtifactPath`.
+2. Source artifact stays unchanged; mutation writes a new `*.mutated.json` file.
+3. Mutated artifact still executes and remains inspect/replay-safe.
+
+## Mutation Prompt Contract (v1)
+
+`poc:mutate` is fail-closed and intentionally strict in PF-POC-015.
+
+Supported single-operation verbs:
+
+1. `add_http_after`
+2. `add_openai_after`
+3. `replace_node_tool`
+4. `connect_nodes`
+5. `remove_leaf_node`
+
+Rules:
+
+1. Prompt must express exactly one operation and an explicit verb.
+2. Hint fields are required where needed (`url`, `method`, `model`, `prompt`, `event`).
+3. Ambiguous or multi-operation prompts are rejected with deterministic error payloads.
+4. Safety invariants block unsafe edits (unknown refs, trigger deletion, non-leaf deletion, cycle-introducing connect).
+
 ## Prompt-Derived URL Check
 
 ```bash

@@ -3,7 +3,7 @@
 **Milestone**: `PF-POC-014`
 **Execution Branch**: `codex/pf-runtime-028-upstream-branch-conditions`
 **Owner**: `core`
-**Status**: `in_progress`
+**Status**: `done`
 **Last Updated**: `2026-03-13`
 
 ## Objective
@@ -53,3 +53,4 @@ Upgrade the pilot from input-only conditional parsing to upstream-aware branch s
 | 2026-03-13 18:16 | Added follow-up phase for user-requested rule codification to prevent governance drift and force product-first n8n-like promptable automation focus in subsequent slices. | `docs/strategy/PF-POC-014.md`, `docs/governance/RULE.md` |
 | 2026-03-13 18:19 | Completed rulebook codification with branch/PR reference lifecycle and product-first delivery contract; policy cross-reference and logs synced. | `docs/governance/RULE.md`, `docs/governance/pr-branch-policy.md`, `docs/logs/2026-03-13.md`, `npm run check:links`, `npm run check:spec`, `npm run check:strategy` |
 | 2026-03-13 18:24 | Re-ran strict verification and freshness after governance updates so PR state remains fail-closed and evidence-current. | `npm run verify:strict`, `npm run check:verification-fresh` |
+| 2026-03-13 19:05 | Merged PF-RUNTIME-028 and closed PF-POC-014 action/risk scope (`ACT-019`, `POC-018`) with tracker refresh complete. | `https://github.com/chhhhhyoo/Moonstone/pull/20`, `docs/strategy/MILESTONES.md`, `docs/strategy/FUTURE-ACTIONS.md`, `docs/strategy/2026-03-12-pf-poc-001-risk-register.md` |

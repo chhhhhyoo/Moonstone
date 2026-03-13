@@ -56,6 +56,7 @@ Forbidden low-signal patterns:
 3. Always include concrete verification command outcomes.
 4. Explicitly state residual risk and confidence limits.
 5. Link follow-up action IDs from `docs/strategy/FUTURE-ACTIONS.md` (or `none`).
+6. Ensure the active milestone plan includes a `Vision Alignment` section that maps implementation intent to `VISION.md`.
 
 ## First Bootstrap Naming
 

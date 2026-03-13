@@ -33,6 +33,7 @@
 - `npm run lint:fix`
 - `npm run poc:compile`
 - `npm run poc:inspect`
+- `npm run poc:mutate`
 - `npm run poc:pilot`
 - `npm run poc:qualify:demo`
 - `npm run poc:qualify:resume`
@@ -121,6 +122,7 @@
 - `notes/spec-impact/2026-03-13-pf-pilot-promptable-workflow.md`: 2026-03-13 PF Pilot Promptable Workflow Impact
 - `notes/spec-impact/2026-03-13-pf-poc-008-demo-runbook-qualification.md`: 2026-03-13 PF-POC-008 Demo Runbook Qualification Impact
 - `notes/spec-impact/2026-03-13-pf-poc-009-webhook-e2e-runid.md`: 2026-03-13 PF-POC-009 Webhook E2E Run-ID Impact
+- `notes/spec-impact/2026-03-13-pf-poc-015-direct-apply-mutation.md`: 2026-03-13 PF-POC-015 Lead-Chef SSOT And Direct-Apply Mutation Impact
 
 ## Documentation Catalog
 
@@ -171,6 +173,8 @@
 - `src/core/poc/PromptCompiler.mjs`
 - `src/core/poc/RetryPolicy.mjs`
 - `src/core/poc/WorkflowArtifact.mjs`
+- `src/core/poc/WorkflowMutationApplier.mjs`
+- `src/core/poc/WorkflowMutationPlanner.mjs`
 - `src/core/poc/WorkflowRuntime.mjs`
 - `src/core/SessionKey.mjs`
 

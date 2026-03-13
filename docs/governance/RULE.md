@@ -79,6 +79,7 @@ Use this sequence for every delivery slice so branch naming, PR quality, and mer
 6. Immediately after each material step, append a plan update entry with concrete evidence (commands, tests, artifacts, or review references).
 7. After every merge, trackers must be refreshed together: milestone status, linked future action status, and linked risk status.
 8. Activating a next slice requires creating/updating the next plan doc in the same tracker refresh change set.
+9. Every new PF-POC plan doc must include a `Vision Alignment` section mapping the slice to `VISION.md` target outcomes.
 
 ## Product-First Delivery Focus (Mandatory)
 
@@ -106,6 +107,7 @@ This project is building an n8n/Opal/make-style promptable automation system, no
 6. Implementation evidence does not reconcile against plan status updates.
 7. Post-merge tracker refresh does not update milestone + action + risk together.
 8. Material implementation steps were executed without pre-step plan mapping or immediate post-step evidence updates.
+9. A new PF-POC plan doc omits explicit `Vision Alignment` mapping to `VISION.md`.
 
 ## Change Control
 
