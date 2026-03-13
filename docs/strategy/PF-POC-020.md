@@ -3,7 +3,7 @@
 **Milestone**: `PF-POC-020`
 **Execution Branch**: `codex/pf-runtime-034-role-ambiguity-choice`
 **Owner**: `core`
-**Status**: `in_progress`
+**Status**: `done`
 **Last Updated**: `2026-03-13`
 
 ## Objective
@@ -82,3 +82,4 @@ This slice advances `VISION.md` by:
 | 2026-03-13 18:14 | Implemented GREEN planner + pilot contracts: choice-capable direction planning, deterministic candidate ordering, and explicit `--proposal-id` selection for ambiguous apply path. | `src/core/poc/ChefDirectionPlannerRoles.mjs`, `src/core/poc/ChefDirectionPlanner.mjs`, `scripts/poc-pilot.mjs`, `node --test test/unit/poc/ChefDirectionPlanner.test.mjs`, `node --test test/integration/conformance/poc-pilot.conformance.test.mjs` |
 | 2026-03-13 18:20 | Completed REFACTOR sync with operator runbook ambiguity-choice guidance, spec-impact capture, and durable learning update. | `docs/workflows/PF-POC-PILOT-promptable-builder.md`, `notes/spec-impact/2026-03-13-pf-poc-020-role-ambiguity-choice-flow.md`, `docs/logs/2026-03-13.md`, `docs/learnings.md` |
 | 2026-03-13 18:35 | Completed strict regression and freshness gates for PF-POC-020 role-ambiguity choice contract and tracker/doc sync. | `node --test test/unit/poc/ChefDirectionPlannerRoles.test.mjs`, `node --test test/unit/poc/ChefDirectionPlanner.test.mjs`, `node --test test/integration/conformance/poc-pilot.conformance.test.mjs`, `npm run verify:strict`, `npm run check:verification-fresh`, `npm run check:strategy`, `npm run check:spec` |
+| 2026-03-13 19:25 | Closed PF-POC-020 after PR #26 merge and activated PF-POC-021 C0 kickoff for Pilot-01 airtight qualification execution. | `docs/strategy/MILESTONES.md`, `docs/strategy/FUTURE-ACTIONS.md`, `docs/strategy/2026-03-12-pf-poc-001-risk-register.md`, `docs/strategy/PF-POC-020.md`, `docs/strategy/PF-POC-021.md`, `docs/logs/2026-03-13.md` |

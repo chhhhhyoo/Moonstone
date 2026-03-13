@@ -9,6 +9,28 @@ import { FileRunJournalStore } from "../src/service/poc/FileRunJournalStore.mjs"
 import { createDefaultConnectorExecutors } from "../src/provider/poc/ConnectorRegistry.mjs";
 import { parseArgs, loadInput, loadArtifact, writeJsonFile } from "./poc-common.mjs";
 
+function fail(code, message) {
+  const error = new Error(message);
+  error.code = code;
+  throw error;
+}
+
+function toErrorPayload(error) {
+  const code = error && typeof error === "object" && "code" in error && error.code
+    ? String(error.code)
+    : "PILOT_FAILED";
+  const message = error instanceof Error ? error.message : String(error);
+  return {
+    ok: false,
+    status: "failed",
+    error: {
+      code,
+      message
+    },
+    warnings: []
+  };
+}
+
 function slugify(input) {
   return String(input)
     .toLowerCase()
@@ -55,7 +77,7 @@ function createMockConnectorExecutors() {
 function normalizeMode(rawMode) {
   const mode = String(rawMode ?? "mock").trim().toLowerCase();
   if (mode !== "mock" && mode !== "live") {
-    throw new Error("Unsupported --mode. Allowed values: mock | live");
+    fail("PILOT_MODE_INVALID", "Unsupported --mode. Allowed values: mock | live");
   }
   return mode;
 }
@@ -102,28 +124,28 @@ function buildGeneratedToolsFromArtifact(artifact) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.artifact === true) {
-    throw new Error("Optional --artifact requires a value.");
+    fail("PILOT_ARTIFACT_ARG_REQUIRED", "Optional --artifact requires a value.");
   }
   if (args.feedback === true) {
-    throw new Error("Optional --feedback requires a value.");
+    fail("PILOT_FEEDBACK_ARG_REQUIRED", "Optional --feedback requires a value.");
   }
   if (args.direction === true) {
-    throw new Error("Optional --direction requires a value.");
+    fail("PILOT_DIRECTION_ARG_REQUIRED", "Optional --direction requires a value.");
   }
   if (args["proposal-id"] === true) {
-    throw new Error("Optional --proposal-id requires a value.");
+    fail("PILOT_PROPOSAL_ID_ARG_REQUIRED", "Optional --proposal-id requires a value.");
   }
   if (args["apply-direction"] && args["apply-direction"] !== true) {
-    throw new Error("Flag --apply-direction does not accept a value.");
+    fail("PILOT_APPLY_DIRECTION_FLAG_INVALID", "Flag --apply-direction does not accept a value.");
   }
 
   const prompt = args.prompt ? String(args.prompt) : null;
   const artifactArg = args.artifact ? path.resolve(process.cwd(), String(args.artifact)) : null;
   if (!prompt && !artifactArg) {
-    throw new Error("Either --prompt or --artifact is required.");
+    fail("PILOT_PROMPT_OR_ARTIFACT_REQUIRED", "Either --prompt or --artifact is required.");
   }
   if (prompt && artifactArg) {
-    throw new Error("Use either --prompt or --artifact, not both.");
+    fail("PILOT_PROMPT_AND_ARTIFACT_CONFLICT", "Use either --prompt or --artifact, not both.");
   }
 
   const feedbackPrompt = args.feedback ? String(args.feedback).trim() : null;
@@ -131,13 +153,13 @@ async function main() {
   const applyDirection = Boolean(args["apply-direction"]);
   const selectedProposalId = args["proposal-id"] ? String(args["proposal-id"]).trim() : null;
   if (feedbackPrompt && direction) {
-    throw new Error("Use either --feedback or --direction, not both.");
+    fail("PILOT_FEEDBACK_AND_DIRECTION_CONFLICT", "Use either --feedback or --direction, not both.");
   }
   if (applyDirection && !direction) {
-    throw new Error("Flag --apply-direction requires --direction.");
+    fail("CHEF_DIRECTION_APPLY_REQUIRES_DIRECTION", "Flag --apply-direction requires --direction.");
   }
   if (selectedProposalId && !applyDirection) {
-    throw new Error("Flag --proposal-id requires --apply-direction.");
+    fail("CHEF_DIRECTION_PROPOSAL_ID_REQUIRES_APPLY", "Flag --proposal-id requires --apply-direction.");
   }
 
   const isDirectionProposalOnly = Boolean(direction && !applyDirection);
@@ -243,14 +265,16 @@ async function main() {
     let selectedDirectionProposal = proposal;
     if (applyDirection && directionPlanStatus === "choice_required") {
       if (!selectedProposalId) {
-        throw new Error(
-          "CHEF_DIRECTION_PROPOSAL_ID_REQUIRED: Ambiguous direction requires --proposal-id to select one proposal candidate."
+        fail(
+          "CHEF_DIRECTION_PROPOSAL_ID_REQUIRED",
+          "Ambiguous direction requires --proposal-id to select one proposal candidate."
         );
       }
       selectedDirectionProposal = proposalCandidates.find((candidate) => candidate.proposalId === selectedProposalId) ?? null;
       if (!selectedDirectionProposal) {
-        throw new Error(
-          `CHEF_DIRECTION_PROPOSAL_ID_UNKNOWN: Unknown proposal id '${selectedProposalId}' for current direction candidates.`
+        fail(
+          "CHEF_DIRECTION_PROPOSAL_ID_UNKNOWN",
+          `Unknown proposal id '${selectedProposalId}' for current direction candidates.`
         );
       }
       proposalCandidates = proposalCandidates.map((candidate) => ({
@@ -264,7 +288,7 @@ async function main() {
       };
     }
     if (applyDirection && !selectedDirectionProposal) {
-      throw new Error("CHEF_DIRECTION_PROPOSAL_MISSING: Direction apply requires a resolved proposal.");
+      fail("CHEF_DIRECTION_PROPOSAL_MISSING", "Direction apply requires a resolved proposal.");
     }
 
     const mutationPlan = feedbackPrompt
@@ -425,6 +449,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error));
+  console.log(JSON.stringify(toErrorPayload(error), null, 2));
   process.exit(1);
 });

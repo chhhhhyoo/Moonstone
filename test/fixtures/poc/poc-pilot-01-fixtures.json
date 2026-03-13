@@ -1,0 +1,57 @@
+[
+  {
+    "id": "resolved-role-apply",
+    "prompt": "POST https://api.example.com/orders then summarize result",
+    "direction": "Connect trigger step to summary step.",
+    "expectedProposalStatus": "proposal_only",
+    "expectedOperationType": "connect_nodes",
+    "expectApply": "success"
+  },
+  {
+    "id": "ambiguity-choice-proposal",
+    "prompt": "POST https://api.example.com/orders then summarize result",
+    "feedback": "add openai after http-1 model gpt-4o-mini prompt \"Summarize result for operator.\" on success",
+    "direction": "After summary step, add a summary step for the operator.",
+    "expectedProposalStatus": "proposal_choice_required",
+    "expectedOperationType": "add_openai_after",
+    "expectedCandidateCount": 2
+  },
+  {
+    "id": "ambiguity-choice-apply-selected",
+    "prompt": "POST https://api.example.com/orders then summarize result",
+    "feedback": "add openai after http-1 model gpt-4o-mini prompt \"Summarize result for operator.\" on success",
+    "direction": "After summary step, add a summary step for the operator.",
+    "expectedProposalStatus": "proposal_choice_required",
+    "expectedOperationType": "add_openai_after",
+    "expectedCandidateCount": 2,
+    "expectApply": "success"
+  },
+  {
+    "id": "ambiguity-choice-missing-proposal-id",
+    "prompt": "POST https://api.example.com/orders then summarize result",
+    "feedback": "add openai after http-1 model gpt-4o-mini prompt \"Summarize result for operator.\" on success",
+    "direction": "After summary step, add a summary step for the operator.",
+    "expectedProposalStatus": "proposal_choice_required",
+    "expectedOperationType": "add_openai_after",
+    "expectedCandidateCount": 2,
+    "expectApply": "error",
+    "expectedApplyErrorCode": "CHEF_DIRECTION_PROPOSAL_ID_REQUIRED"
+  },
+  {
+    "id": "ambiguity-choice-unknown-proposal-id",
+    "prompt": "POST https://api.example.com/orders then summarize result",
+    "feedback": "add openai after http-1 model gpt-4o-mini prompt \"Summarize result for operator.\" on success",
+    "direction": "After summary step, add a summary step for the operator.",
+    "expectedProposalStatus": "proposal_choice_required",
+    "expectedOperationType": "add_openai_after",
+    "expectedCandidateCount": 2,
+    "expectApply": "error",
+    "expectedApplyErrorCode": "CHEF_DIRECTION_PROPOSAL_ID_UNKNOWN"
+  },
+  {
+    "id": "unsupported-vague-direction",
+    "prompt": "POST https://api.example.com/orders then summarize result",
+    "direction": "Make this workflow better somehow.",
+    "expectedProposalErrorCode": "CHEF_DIRECTION_UNSUPPORTED"
+  }
+]

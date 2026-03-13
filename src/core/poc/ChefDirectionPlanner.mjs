@@ -14,6 +14,48 @@ const ROLE_REFERENCE_CAPTURE = [
   "trigger\\s+(?:step|node)"
 ].join("|");
 
+function tokenizeNodeId(value) {
+  return String(value).match(/[0-9]+|[^0-9]+/g) ?? [];
+}
+
+function compareNodeIdsNatural(left, right) {
+  const leftTokens = tokenizeNodeId(left);
+  const rightTokens = tokenizeNodeId(right);
+  const length = Math.max(leftTokens.length, rightTokens.length);
+
+  for (let index = 0; index < length; index += 1) {
+    const leftToken = leftTokens[index];
+    const rightToken = rightTokens[index];
+    if (leftToken === undefined) {
+      return -1;
+    }
+    if (rightToken === undefined) {
+      return 1;
+    }
+
+    const leftNumeric = /^[0-9]+$/.test(leftToken);
+    const rightNumeric = /^[0-9]+$/.test(rightToken);
+    if (leftNumeric && rightNumeric) {
+      const leftNumber = Number.parseInt(leftToken, 10);
+      const rightNumber = Number.parseInt(rightToken, 10);
+      if (leftNumber !== rightNumber) {
+        return leftNumber - rightNumber;
+      }
+      if (leftToken.length !== rightToken.length) {
+        return leftToken.length - rightToken.length;
+      }
+      continue;
+    }
+
+    const compared = leftToken.localeCompare(rightToken, "en", { sensitivity: "base" });
+    if (compared !== 0) {
+      return compared;
+    }
+  }
+
+  return 0;
+}
+
 /**
  * @returns {never}
  */
@@ -299,7 +341,7 @@ function resolveRoleAnchorsInDirection({
       artifact,
       roleReference: matched
     });
-    const candidates = [...analyzed.candidates].sort((left, right) => left.localeCompare(right));
+    const candidates = [...analyzed.candidates].sort(compareNodeIdsNatural);
 
     if (analyzed.selector === "first") {
       const nodeId = candidates[0];
@@ -397,7 +439,7 @@ function resolveRoleAnchorsInDirection({
         }
       ]
     }))
-    .sort((left, right) => left.nodeId.localeCompare(right.nodeId));
+    .sort((left, right) => compareNodeIdsNatural(left.nodeId, right.nodeId));
 
   return {
     status: "choice_required",

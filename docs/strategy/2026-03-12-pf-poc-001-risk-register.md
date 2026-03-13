@@ -27,7 +27,10 @@
 | POC-021 | Intent-level chef feedback can produce unsafe or misleading changes if proposal mapping is opaque, non-deterministic, or auto-applies without clear confirmation boundaries | medium | critical | Add deterministic intent-to-proposal planner with explicit confidence/ambiguity diagnostics and apply-confirmation gate | core | done |
 | POC-022 | Broader intent-direction parsing can introduce incorrect graph mutations if operation inference is under-specified or proposal output hides concrete graph delta before apply | medium | critical | Add bounded operation-intent contracts with required hints plus deterministic proposal diff preview and fail-closed rejection on low-confidence/ambiguous directions | core | done |
 | POC-023 | Role-based node anchor inference can silently target wrong nodes when multiple candidates match a natural-language reference (for example “summary step”, “request node”) | medium | critical | Introduce deterministic role-index resolution with explicit ambiguity rejection and qualification matrix for node-id-free direction paths | core | done |
-| POC-024 | Hard-failing on role-anchor ambiguity can push users back to implementation-level node IDs and break lead-chef review flow when multiple valid candidates exist | medium | high | Add deterministic proposal-choice contract for exactly one ambiguous role reference, require explicit proposal-id selection for apply, and fail closed on multi-ambiguous references | core | in_progress |
+| POC-024 | Hard-failing on role-anchor ambiguity can push users back to implementation-level node IDs and break lead-chef review flow when multiple valid candidates exist | medium | high | Add deterministic proposal-choice contract for exactly one ambiguous role reference, require explicit proposal-id selection for apply, and fail closed on multi-ambiguous references | core | done |
+| POC-025 | Pilot-01 confidence can become demo theater if scenario coverage stays narrow and does not enforce the lead-chef acceptance contract across proposal/apply/run/replay paths | medium | critical | Add fail-closed Pilot-01 scenario corpus with qualification criteria and command/receipt continuity assertions under checkpoint-gated execution | core | in_progress |
+| POC-026 | Proposal-choice determinism can regress across repeated runs (candidate ordering/proposal IDs/previews), undermining reproducibility and trust | medium | high | Add deterministic rerun assertions for role-ambiguity proposal-choice semantics in unit + conformance suites | core | in_progress |
+| POC-027 | Operator actionability can drift if failure codes are not mapped to clear runbook handling, causing triage friction and misuse of direction/apply contracts | medium | medium | Normalize failure-code map in pilot runbook and enforce key error assertions in qualification scenarios | core | in_progress |
 
 ## Trigger Conditions
 
@@ -53,6 +56,9 @@
 20. Expanding direction planner coverage beyond summary intent can regress safety if inferred operation details are not explicit and previewable before confirmation.
 21. Node-id-free direction phrasing can select wrong graph anchors if role labels are not deterministically resolved with fail-closed ambiguity handling.
 22. Role-anchor ambiguity can degrade user abstraction if planner rejects all candidate paths instead of surfacing deterministic reviewable choices.
+23. Pilot-01 may appear stable in isolated tests while failing holistic lead-chef qualification if scenario corpus does not cover proposal/apply/run/replay continuity together.
+24. Candidate-selection flows can become non-reproducible if proposal ordering/IDs drift across equivalent repeated runs.
+25. Error-code outputs can remain technically correct but operationally weak when runbook mapping is incomplete or stale.
 
 ## Exit Criteria For Risk Closure
 
@@ -80,3 +86,6 @@
 22. POC-022: closed when bounded direction-to-operation mappings are qualified per operation type, deterministic proposal diffs are emitted pre-apply, and strict conformance + verification gates remain green.
 23. POC-023: closed when bounded role-based anchor directions resolve deterministically (or fail closed on ambiguity) with conformance and strict verification evidence.
 24. POC-024: closed when single-role ambiguity yields deterministic proposal candidates with explicit proposal-id apply confirmation and multi-ambiguous references still fail closed under strict qualification evidence.
+25. POC-025: closed when Pilot-01 scenario corpus and qualification criteria enforce lead-chef acceptance contract with strict conformance + verification evidence.
+26. POC-026: closed when repeated equivalent runs prove deterministic proposal-choice ordering, IDs, previews, and mutation summaries under automated assertions.
+27. POC-027: closed when key failure codes are enforced in tests and mapped to explicit operator actions in runbook documentation.

@@ -3,7 +3,7 @@
 **Milestone**: `PF-POC-021`
 **Execution Branch**: `codex/pf-runtime-035-pilot-01-qualification`
 **Owner**: `core`
-**Status**: `planned`
+**Status**: `done`
 **Last Updated**: `2026-03-13`
 
 ## Objective
@@ -187,3 +187,9 @@ Gate:
 | timestamp_kst | update | evidence |
 |---|---|---|
 | 2026-03-13 19:00 | Drafted airtight Pilot-01 checkpoint/TDD plan with fail-closed progression gates. | `docs/strategy/PF-POC-021.md` |
+| 2026-03-13 19:25 | Activated PF-POC-021 C0: closed PF-POC-020 tracker set, linked PF-POC-021 action/risk entries, and aligned execution branch to latest `origin/master`. | `docs/strategy/MILESTONES.md`, `docs/strategy/FUTURE-ACTIONS.md`, `docs/strategy/2026-03-12-pf-poc-001-risk-register.md`, `docs/strategy/PF-POC-020.md`, `docs/strategy/PF-POC-021.md`, `docs/logs/2026-03-13.md`, `git checkout -B codex/pf-runtime-035-pilot-01-qualification origin/master` |
+| 2026-03-13 20:02 | C1 RED complete: added fixture-driven Pilot-01 qualification conformance gate and captured expected failures for invalid direction/apply paths (empty stdout on failures). | `test/fixtures/poc/poc-pilot-01-fixtures.json`, `test/fixtures/poc/poc-pilot-01-quality-criteria.json`, `test/integration/conformance/poc-pilot-01-qualification.conformance.test.mjs`, `node --test test/integration/conformance/poc-pilot-01-qualification.conformance.test.mjs` |
+| 2026-03-13 20:08 | C2 RED complete: added unit determinism guard for natural numeric candidate ordering and captured expected failure (`...-10` sorted before `...-2`). | `test/unit/poc/ChefDirectionPlanner.test.mjs`, `node --test test/unit/poc/ChefDirectionPlanner.test.mjs` |
+| 2026-03-13 20:16 | C3 GREEN complete: implemented deterministic pilot error JSON contract and natural candidate ordering in planner; flipped C1/C2 targeted failures to green. | `scripts/poc-pilot.mjs`, `src/core/poc/ChefDirectionPlanner.mjs`, `node --test test/unit/poc/ChefDirectionPlanner.test.mjs`, `node --test test/integration/conformance/poc-pilot-01-qualification.conformance.test.mjs` |
+| 2026-03-13 20:19 | C4 REFACTOR complete: added dedicated `poc:qualify:pilot` command, refreshed pilot runbook failure map/operator actions, and documented slice-level spec impact. | `package.json`, `docs/workflows/PF-POC-PILOT-promptable-builder.md`, `notes/spec-impact/2026-03-13-pf-poc-021-pilot-01-qualification-gate.md`, `npm run poc:qualify:pilot`, `node --test test/integration/conformance/poc-pilot.conformance.test.mjs` |
+| 2026-03-13 20:24 | C5 final gate complete: strict verification, freshness, and strategy/spec checks are all green after Pilot-01 qualification updates. | `npm run lint:fix`, `npm run verify:strict`, `npm run check:verification-fresh`, `npm run check:strategy`, `npm run check:spec` |
