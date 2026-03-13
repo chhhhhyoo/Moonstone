@@ -32,6 +32,7 @@
     "state:verification": "node scripts/session-state.mjs verification",
     "poc:compile": "node scripts/poc-compile.mjs",
     "poc:validate": "node scripts/poc-validate.mjs",
+    "poc:mutate": "node scripts/poc-mutate.mjs",
     "poc:run": "node scripts/poc-run.mjs",
     "poc:resume": "node scripts/poc-resume.mjs",
     "poc:serve": "node scripts/poc-serve.mjs",
