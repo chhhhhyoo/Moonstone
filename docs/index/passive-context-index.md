@@ -125,6 +125,7 @@
 - `notes/spec-impact/2026-03-13-pf-poc-015-direct-apply-mutation.md`: 2026-03-13 PF-POC-015 Lead-Chef SSOT And Direct-Apply Mutation Impact
 - `notes/spec-impact/2026-03-13-pf-poc-016-pilot-feedback-loop.md`: 2026-03-13 PF-POC-016 Pilot Feedback Loop Impact
 - `notes/spec-impact/2026-03-13-pf-poc-017-intent-direction-proposal-loop.md`: 2026-03-13 PF-POC-017 Intent Direction Proposal Loop Impact
+- `notes/spec-impact/2026-03-13-pf-poc-018-intent-operation-pack-preview.md`: 2026-03-13 PF-POC-018 Intent Operation-Pack And Proposal Preview Impact
 
 ## Documentation Catalog
 
@@ -172,6 +173,7 @@
 - `src/core/OperationReceipt.mjs`
 - `src/core/Orchestrator.mjs`
 - `src/core/poc/ChefDirectionPlanner.mjs`
+- `src/core/poc/ChefDirectionPlannerPreview.mjs`
 - `src/core/poc/OperationEnvelope.mjs`
 - `src/core/poc/PromptCompiler.mjs`
 - `src/core/poc/RetryPolicy.mjs`

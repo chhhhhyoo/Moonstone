@@ -3,7 +3,7 @@
 **Milestone**: `PF-POC-017`
 **Execution Branch**: `codex/pf-runtime-031-intent-feedback-planner`
 **Owner**: `core`
-**Status**: `in_progress`
+**Status**: `done`
 **Last Updated**: `2026-03-13`
 
 ## Objective
@@ -90,3 +90,4 @@ This slice advances `VISION.md` by:
 | 2026-03-13 13:54 | Implemented GREEN contracts: added deterministic `ChefDirectionPlanner` and wired `poc:pilot --direction` proposal-only default with explicit `--apply-direction` apply path while preserving source artifact immutability. | `src/core/poc/ChefDirectionPlanner.mjs`, `scripts/poc-pilot.mjs`, `node --test test/unit/poc/ChefDirectionPlanner.test.mjs`, `node --test test/integration/conformance/poc-pilot.conformance.test.mjs` |
 | 2026-03-13 14:03 | Completed REFACTOR documentation sync: runbook direction flow, spec-impact note, and durable learning capture for proposal-gate pattern. | `docs/workflows/PF-POC-PILOT-promptable-builder.md`, `notes/spec-impact/2026-03-13-pf-poc-017-intent-direction-proposal-loop.md`, `docs/logs/2026-03-13.md`, `docs/learnings.md` |
 | 2026-03-13 14:07 | Completed strict regression + freshness gates for PF-POC-017 after final code/docs sync. | `npm run lint:fix`, `node --test test/unit/poc/ChefDirectionPlanner.test.mjs`, `node --test test/integration/conformance/poc-pilot.conformance.test.mjs`, `npm run verify:strict`, `npm run check:verification-fresh`, `npm run check:strategy`, `npm run check:spec` |
+| 2026-03-13 14:30 | Merged PF-RUNTIME-031 and closed tracker set (`PF-POC-017`, `ACT-022`, `POC-021`) before activating PF-POC-018. | `https://github.com/chhhhhyoo/Moonstone/pull/23`, `docs/strategy/MILESTONES.md`, `docs/strategy/FUTURE-ACTIONS.md`, `docs/strategy/2026-03-12-pf-poc-001-risk-register.md` |

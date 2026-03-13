@@ -3,6 +3,7 @@ import { compilePrompt } from "../src/core/poc/PromptCompiler.mjs";
 import { planWorkflowMutation } from "../src/core/poc/WorkflowMutationPlanner.mjs";
 import { applyWorkflowMutation } from "../src/core/poc/WorkflowMutationApplier.mjs";
 import { planChefDirection } from "../src/core/poc/ChefDirectionPlanner.mjs";
+import { buildChefDirectionPreview } from "../src/core/poc/ChefDirectionPlannerPreview.mjs";
 import { WorkflowRuntime } from "../src/core/poc/WorkflowRuntime.mjs";
 import { FileRunJournalStore } from "../src/service/poc/FileRunJournalStore.mjs";
 import { createDefaultConnectorExecutors } from "../src/provider/poc/ConnectorRegistry.mjs";
@@ -202,6 +203,10 @@ async function main() {
   if (direction) {
     proposal = {
       ...planChefDirection({
+        artifact: sourceArtifact,
+        direction
+      }),
+      preview: buildChefDirectionPreview({
         artifact: sourceArtifact,
         direction
       }),

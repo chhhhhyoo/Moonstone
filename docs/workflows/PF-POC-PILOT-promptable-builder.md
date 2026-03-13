@@ -89,6 +89,39 @@ Expected apply result:
 3. `lineage.effectiveArtifactPath` points to a new `*.mutated.json`.
 4. Source artifact remains byte-unchanged.
 
+## Intent Operation-Pack (PF-POC-018)
+
+Direction planning now supports bounded operation intents (single operation only):
+
+1. `add_openai_after`
+2. `add_http_after`
+3. `replace_node_tool`
+4. `connect_nodes`
+5. `remove_leaf_node`
+
+Example direction for HTTP insert:
+
+```bash
+npm run poc:pilot -- \
+  --mode mock \
+  --artifact .moonstone/pilot/chef-initial/artifact.json \
+  --direction "After http-1, add an API check step using GET https://api.example.com/orders/summary." \
+  --outdir .moonstone/pilot/chef-direction-http-proposal
+```
+
+Expected proposal payload contract additions:
+
+1. `proposal.preview.affectedNodeIds`
+2. `proposal.preview.nodeAdds`, `proposal.preview.nodeUpdates`, `proposal.preview.nodeRemoves`
+3. `proposal.preview.edgeAdds`, `proposal.preview.edgeRemoves`
+4. `proposal.preview.blocked` + `proposal.preview.blockedReasons`
+
+Fail-closed behavior:
+
+1. ambiguous/multi-intent directions are rejected,
+2. under-specified directions (missing required hints) are rejected,
+3. blocked graph-safety proposals report deterministic `blockedReasons` in preview.
+
 ## Direct-Apply Mutation Check (PF-POC-015)
 
 ```bash

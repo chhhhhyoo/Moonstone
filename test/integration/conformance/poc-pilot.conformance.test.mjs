@@ -335,3 +335,86 @@ test("poc:pilot supports direction proposal and apply-confirm loop", async () =>
     await rm(tempRoot, { recursive: true, force: true });
   }
 });
+
+test("poc:pilot supports add-http direction proposal with deterministic diff preview", async () => {
+  const tempRoot = await mkdtemp(path.join(tmpdir(), "moonstone-poc-pilot-direction-http-loop-"));
+  try {
+    const outDir = path.join(tempRoot, "initial");
+    const proposalOutDir = path.join(tempRoot, "proposal");
+    const applyOutDir = path.join(tempRoot, "apply");
+    const journalDir = path.join(tempRoot, "journal");
+
+    const initialResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--prompt",
+      "POST https://api.example.com/orders then summarize result",
+      "--input",
+      "{\"text\":\"pilot-direction-http-initial\"}",
+      "--outdir",
+      outDir,
+      "--journal-dir",
+      journalDir,
+      "--run-id",
+      "pilot-direction-http-initial-001"
+    ]);
+    const initialPayload = parseJsonOutput(initialResult.stdout, "poc:pilot(initial-direction-http)");
+    const sourceBeforeRaw = await readFile(initialPayload.paths.artifactPath, "utf8");
+
+    const direction = "After http-1, add an API check step using GET https://api.example.com/orders/summary.";
+    const proposalResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--artifact",
+      initialPayload.paths.artifactPath,
+      "--direction",
+      direction,
+      "--outdir",
+      proposalOutDir,
+      "--journal-dir",
+      journalDir
+    ]);
+    const proposalPayload = parseJsonOutput(proposalResult.stdout, "poc:pilot(direction-http-proposal)");
+    assert.equal(proposalPayload.ok, true);
+    assert.equal(proposalPayload.status, "proposal_only");
+    assert.equal(proposalPayload.proposal.operationType, "add_http_after");
+    assert.equal(proposalPayload.proposal.applied, false);
+    assert.ok(Array.isArray(proposalPayload.proposal.preview.affectedNodeIds));
+    assert.ok(proposalPayload.proposal.preview.nodeAdds.length >= 1);
+    assert.ok(proposalPayload.proposal.preview.edgeAdds.length >= 1);
+
+    const applyResult = await runNodeScript([
+      "scripts/poc-pilot.mjs",
+      "--mode",
+      "mock",
+      "--artifact",
+      initialPayload.paths.artifactPath,
+      "--direction",
+      direction,
+      "--apply-direction",
+      "--input",
+      "{\"text\":\"pilot-direction-http-apply\"}",
+      "--outdir",
+      applyOutDir,
+      "--journal-dir",
+      journalDir,
+      "--run-id",
+      "pilot-direction-http-apply-001"
+    ]);
+    const applyPayload = parseJsonOutput(applyResult.stdout, "poc:pilot(direction-http-apply)");
+    assert.equal(applyPayload.ok, true);
+    assert.equal(applyPayload.status, "completed");
+    assert.equal(applyPayload.runId, "pilot-direction-http-apply-001");
+    assert.equal(applyPayload.proposal.applied, true);
+    assert.equal(applyPayload.proposal.operationType, "add_http_after");
+    assert.ok(applyPayload.executedNodeIds.includes("http-2"));
+    assert.ok(applyPayload.executedNodeIds.includes("openai-success-1"));
+
+    const sourceAfterRaw = await readFile(initialPayload.paths.artifactPath, "utf8");
+    assert.equal(sourceAfterRaw, sourceBeforeRaw, "direction add-http apply must not mutate source artifact file");
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+});
